@@ -16,6 +16,28 @@ $view_temp='<html>
  Hi From #CLASS template!
 </body>
 </html>';
+$m_temp='
+<?php
+class #CLASS extends Afx_Module_Abstract
+{
+    protected $_tablename = "t_#TABLE";
+    public static $_instance = NULL;
+    protected function __construct ()
+    {
+        parent::__construct();
+    }
+    /**
+     * @return #CLASS
+     */
+    public static function Instance ()
+    {
+        if (NULL === self::$_instance) {
+            self::$_instance = new self();
+        }
+        return self::$_instance;
+    }
+}
+';
 function parse_command_line($str){
 	global $options;
 	$arr=explode('=', $str);
@@ -51,6 +73,19 @@ if(file_exists($lock_file)){
          file_put_contents($view_file, $view_temp);
          exit("done\n");
      }  
+     if(isset($options['m'])||isset($options['-m'])){
+      if(empty($options['m'])&&empty($options['-m'])){
+             exit("module is missing");
+         }
+        $class=(isset($options['m'])?$options['m']:$options['-m']);
+        $class_file=$cwd."/application/models/".$class.".php";
+//        $class_temp=str_replace('#CLASS', $class, $m_temp);
+        $class_temp=str_replace('#TABLE', strtolower($class), $m_temp);
+        $class_temp=str_replace('#CLASS', $class, $class_temp);
+        echo "class file=$class_file\nclass template=$class_temp";
+        echo "write class file\n";
+        file_put_contents($class_file, $class_temp);
+     }
      exit("no op\n");
 }
 if(!isset($options['path']))exit( "no path specific\n");
@@ -69,6 +104,7 @@ $conf=array(
  $path.'/application/controllers',
  $path.'/application/views',
  $path.'/application/views/index',
+ $path.'/application/views/error',
  $path.'/application/modules',
  $path.'/application/library',
  $path.'/application/library/Afx',
@@ -79,6 +115,7 @@ $conf=array(
  ),
 'files'=>array(
  array('name'=>$path.'/index.php','content'=>'<?php
+date_default_timezone_set("Asia/Shanghai");
 define("APP_PATH",  $_SERVER["DOCUMENT_ROOT"]);
 if(file_exists(APP_PATH."/conf/auto.php")){
   require_once APP_PATH."/conf/auto.php";
@@ -91,13 +128,13 @@ RewriteRule .* /index.php'),
  array('name'=>$path.'/conf/application.ini','content'=>'[production]
 application.directory=APP_PATH "/application
 application.dispatcher.catchException=TRUE
-
 '),
 array('name'=>$path.'/conf/auto.php','content'=>'<?php
 $root = $_SERVER["DOCUMENT_ROOT"] . "/application";
 $load_paths = "$root/models;$root/modules;$root/plugins;$root/library";
 function __autoload ($class_name)
 {
+    ob_clean();
     global $load_paths;
     $paths = explode(";", $load_paths);
     if (strstr($class_name, "_")) {
@@ -115,7 +152,6 @@ function __autoload ($class_name)
     }
 }'),
 array('name'=>$path.'/conf/conf.php','content'=>"<?php
-<?php
 return array(
   'db'=>array(
   'type'=>'mysql',
@@ -127,11 +163,14 @@ return array(
 class Bootstrap  extends Yaf_Bootstrap_Abstract{
     public function _initDb(){
         if(file_exists("conf/conf.php"))  {  
-        $conf=include_once  "conf/conf.php";
+        $conf=include_once"conf/conf.php";
         Afx_Db_Adapter::initOption($conf);
+        spl_autoload_unregister(array("Yaf_Loader", "autoload"));
+        spl_autoload_register("__autoload");
         }
     }
     public function _initModel(){
+          ob_start();
     }
 }
  '),
@@ -165,6 +204,9 @@ class ErrorController extends Yaf_Controller_Abstract
     Hellow World!
  </body>
 </html>'),
+ array('name'=>$path.'/application/views/error/index.phtml','content'=>'
+  error occured
+ '),
 )
 );
 if(!file_exists($path)){

@@ -85,14 +85,14 @@ class Afx_Db_Adapter
             }
         }
         
-    echo  self::$read_dsn= 'mysql:host=' . $master['host'] . ';port=' .$master['port'] . ';dbname=' . $master['dbname'].';charset='.$master['charset'].';',"\n";
-    echo  self::$write_dsn= 'mysql:host=' . $slave['host'] . ';port=' .$slave['port'] . ';dbname=' . $slave['dbname'].';charset='.$slave['charset'].';',"\n";
+      self::$read_dsn= 'mysql:host=' . $master['host'] . ';port=' .$master['port'] . ';dbname=' . $master['dbname'].';charset='.$master['charset'].';';
+      self::$write_dsn= 'mysql:host=' . $slave['host'] . ';port=' .$slave['port'] . ';dbname=' . $slave['dbname'].';charset='.$slave['charset'].';';
         
         try{
           self::$link_read = new PDO(self::$read_dsn, $master['user'],$master['password'],array(PDO::ATTR_TIMEOUT=>1));
           self::$link_write = new PDO(self::$write_dsn, $slave['user'],$slave['password'],array(PDO::ATTR_TIMEOUT=>1));
-        var_dump(self::$link_read->errorInfo());
-        var_dump(self::$link_write->errorInfo());
+//        var_dump(self::$link_read->errorInfo());
+//        var_dump(self::$link_write->errorInfo());
         }catch(PDOException $e){
             throw new Exception($e) ;
         }
@@ -109,7 +109,7 @@ class Afx_Db_Adapter
              if($statment->errorCode()!='00000'){
                     throw new PDOException(implode('',$statment->errorInfo()), $statment->errorCode());
               }
-                $obj= $statment->fetch(PDO::FETCH_ASSOC);
+                $obj= $statment->fetchALL(PDO::FETCH_ASSOC);
               if($statment->errorCode()!='00000'){
                     throw new PDOException(implode('',$statment->errorInfo()), $statment->errorCode());
               }
