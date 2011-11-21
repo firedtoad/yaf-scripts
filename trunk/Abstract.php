@@ -25,13 +25,30 @@ class Afx_Module_Abstract{
     
     protected static  $_instance=NULL;
     
+   
+
     /**
+     * @return stdClass 
+     */
+    public function getObj ()
+    {
+        return $this->_obj;
+    }
+
+	/**
+     * @param stdClass $_obj
+     */
+    public function setObj ($_obj)
+    {
+        $this->_obj = $_obj;
+    }
+     /**
      * 
      * Enter description here ...
      * @return Afx_Db_Adapter
      */
 
-    public function getAdapter ()
+	public function getAdapter ()
     {
             
         return $this->_adapter;
@@ -86,6 +103,12 @@ class Afx_Module_Abstract{
        }
   }
     
+  /**
+   * save an object to the database
+   * @param void
+   * @return TRUE if success else FALSE
+   */
+  
    public function save(){
       $sql='';
        if($this->_obj===NULL){
@@ -100,6 +123,7 @@ class Afx_Module_Abstract{
                       continue;
                   }
               }
+              
              if(!count($arr))return FALSE;
              $keystr= implode(',',array_keys($arr));
              $sql.=substr($keystr, 0,strlen($keystr));
@@ -113,6 +137,7 @@ class Afx_Module_Abstract{
              }
              $sql=substr($sql, 0,strlen($sql)-1);
              $sql.=')';
+             
            return $this->getAdapter()->execute($sql);
           }
           if($this->_obj&& $this->_obj instanceof stdClass){
@@ -122,7 +147,7 @@ class Afx_Module_Abstract{
               if(is_array($arr_old)&&is_array($arr_this)){
               $arr_update=array_intersect_key($arr_this, $arr_old);
               $arr_real_update=array_diff($arr_update, $arr_old);
-               if(count($arr_real_update)){
+              if(count($arr_real_update)){
                    $sql.=' set '; 
                    foreach ($arr_real_update as $k=>$v){
                        if(is_string($v)){
@@ -146,29 +171,47 @@ class Afx_Module_Abstract{
           }
    }
    
+   /**
+    * 
+    * delete the object in the database
+    * @param int $id
+    * @return TRUE if success else FALSE
+    */
+   
+   
    public function delete($id=NULL){
-      $rid=$id?($id>=0?$id:NULL):$this->id?($this->id>=0?$this->id:NULL):NULL;
+      $rid=$id?($id>=0?$id:NULL):$this->_obj->id?($this->_obj->id>=0?$this->_obj->id:NULL):NULL;
+      echo '<pre>';
+      var_dump($this);
       if(!$rid){
           return FALSE;
       }
-      $sql=sprintf('DELETE FROM '.$this->_tablename.' WHERE id=%d',$rid);
+      $sql=sprintf('DELETE  FROM '.$this->_tablename.' WHERE id=%d',$rid);
+      
       return $this->getAdapter()->execute($sql);
    }
    
    /**
     * 
-    * Enter description here ...
+    * select an object from the database id is the specific id
     * @param long $id
-    * @return bool
+    * @return Afx_Module_Abstract if success else NULL
     */
+   
    public function from_db($id){
      $sql=sprintf('SELECT * FROM '.$this->_tablename.' WHERE id=%d',$id);
      $arr=$this->getAdapter()->execute($sql);
-     if($arr&&is_array($arr)){
-         $this->_obj=self::fromArray($arr);;
-         $this->setProperties($arr);
-         return TRUE;
+     if($arr&&is_array($arr[0])){
+         $this->_obj=self::fromArray($arr[0]);;
+         $this->setProperties($arr[0]);
+         return $this;
      }
-     return FALSE;
+     return NULL;
    }   
+   
+   public function getList($offset=0,$limit=1000){
+       $sql=sprintf('SELECT * FROM '.$this->_tablename." LIMIT $offset,$limit ");
+       return $this->getAdapter()->execute($sql);
+   }
+   
 }
