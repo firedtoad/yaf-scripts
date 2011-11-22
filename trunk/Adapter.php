@@ -1,7 +1,21 @@
 <?php
-class Afx_Db_Excetion extends Exception
-{
-}
+/**
+ * Afx Framework
+ * A Light Framework Provider Basic Communication With 
+ * Databases Like Mysql Memcache Mongo and more
+ * LICENSE
+ * This source file is part of the Afx Framework
+ * You can copy or distibute this file but don't delete the LICENSE content here
+ * @copyright  Copyright (c) 2005-2011 Zend Technologies USA Inc. (http://www.zend.com)
+ * @license Free
+ */
+
+/**
+ * @package Afx_Db
+ * @version $Id Adapter.php
+ * The Pdo Class Adapter Provider Communication With The RelationShip Database
+ * @author Afx team && firedtoad@gmail.com &&dietoad@gmail.com
+ */
 class Afx_Db_Adapter
 {
     /**
@@ -15,11 +29,24 @@ class Afx_Db_Adapter
      */
     private static $link_write = NULL;
     
+    /**
+     * store the default dbname
+     * @var string
+     */
+    
+    private static $dbname=NULL;
      /**
+     * store the Database Configuration 
      * @var array
      */
     private  static $options = array();
     
+    /**
+     * store the databases mapping to the tables 
+     * @var array
+     */
+    
+    private static $mapping=array();
       /**
      * @var string
      */
@@ -36,71 +63,122 @@ class Afx_Db_Adapter
     
     private static $instance =NULL;
  
-    public static function initOption($arr=array()){        
-        self::$options=$arr;
+    /**
+     * @return the $mapping
+     */
+    public static function getMapping ()
+    {
+        return self::$mapping;
     }
-    
+
+	/**
+     * @param array $mapping
+     */
+    public static function setMapping ($mapping)
+    {
+        self::$mapping = $mapping;
+    }
+    /**
+     * 
+     * Initialize The Configuration
+     * @param array $arr
+     */
+	public static function initOption($arr=array()){        
+        self::$options=$arr;
+        return TRUE;
+    }
+    /**
+     * Get the Configuration
+     * @return array
+     */
     public static function getOptions(){
         return self::$options;
     }
-    
+    /**
+     * 
+     * @return Afx_Db_Adapter
+     */
     public static function instance(){
         if(NULL===self::$instance){
             self::$instance=new self();
         }
         return self::$instance;
     }
-    
-
-    private function __construct ()
-    {
-//        var_dump(self::$options);
-        if (count(self::$options) == 0) {
-            throw new Afx_Db_Excetion('no  configuration found!', 404);
+    /**
+     * Initialize The PDO connections
+     * @throws Afx_Db_Exception
+     * @throws Exception
+     */
+    private function _initConnection(){
+      if (count(self::$options) == 0) {
+            throw new Afx_Db_Exception('no  configuration found!', 404);
         }
         
         if(!isset(self::$options['db'])){
-            throw new Afx_Db_Excetion('no db  configuration found!', 404);
+            throw new Afx_Db_Exception('no db  configuration found!', 404);
         }
         
         if(!isset(self::$options['db']['master'])||!is_array(self::$options['db']['master'])){
-            throw new Afx_Db_Excetion('no master db configuration found!', 404);
+            throw new Afx_Db_Exception('no master db configuration found!', 404);
         }
-        
         $master=self::$options['db']['master'];
+        //if no slave use the master as the slave
         $slave=isset(self::$options['db']['slave'])&&is_array(self::$options['db']['slave'])?self::$options['db']['slave']:self::$options['db']['master'];
-        $keys = array('host' => 1, 'user' => 1, 'password' => 1, 'port' => 1, 
+       static  $keys = array('host' => 1, 'user' => 1, 'password' => 1, 'port' => 1, 
         'dbname' => 1,'charset'=>1);
         $nokeys = array_diff_key($keys, $master);
         if (count($nokeys)) {
             foreach ($nokeys as $k => $v) {
-                throw new Afx_Db_Excetion("no $k found in db master configuration!", 
+                throw new Afx_Db_Exception("no $k found in db master configuration!", 
                 404);
             }
         }
         $nokeys = array_diff_key($keys, $slave);
         if (count($nokeys)) {
             foreach ($nokeys as $k => $v) {
-                throw new Afx_Db_Excetion("no $k found in db slave configuration!",  404);
+                throw new Afx_Db_Exception("no $k found in db slave configuration!",  404);
             }
         }
-        
-      self::$read_dsn= 'mysql:host=' . $master['host'] . ';port=' .$master['port'] . ';dbname=' . $master['dbname'].';charset='.$master['charset'].';';
-      self::$write_dsn= 'mysql:host=' . $slave['host'] . ';port=' .$slave['port'] . ';dbname=' . $slave['dbname'].';charset='.$slave['charset'].';';
+      self::$dbname=$master['dbname'];
+      self::$read_dsn= 'mysql:host=' . $slave['host'] . ';port=' .$slave['port'] . ';dbname=' . $slave['dbname'].';charset='.$slave['charset'].';';
+      self::$write_dsn= 'mysql:host=' . $master['host'] . ';port=' .$master['port'] . ';dbname=' . $master['dbname'].';charset='.$master['charset'].';';
         
         try{
-          self::$link_read = new PDO(self::$read_dsn, $master['user'],$master['password'],array(PDO::ATTR_TIMEOUT=>1));
-          self::$link_write = new PDO(self::$write_dsn, $slave['user'],$slave['password'],array(PDO::ATTR_TIMEOUT=>1));
-//        var_dump(self::$link_read->errorInfo());
-//        var_dump(self::$link_write->errorInfo());
+          self::$link_read = new PDO(self::$read_dsn, $slave['user'],$slave['password'],array(PDO::ATTR_TIMEOUT=>1));
+          self::$link_write = new PDO(self::$write_dsn, $master['user'],$master['password'],array(PDO::ATTR_TIMEOUT=>1));
         }catch(PDOException $e){
             throw new Exception($e) ;
         }
     }
-    public function execute ($sql)
+    
+    private function __construct ()
     {
-        echo $sql,"\n";
+      $this->_initConnection();      
+    }
+    public function execute ($sql,$table=NULL)
+    {
+         echo $sql,"\n";
+        //we want to map the table in different database so
+        //selete the default database every time
+        self::$link_read->exec("use ".self::$dbname);
+        self::$link_write->exec("use ".self::$dbname);
+        //check if we need mapping 
+        //Notice that it exists a bug when two database have the same table name 
+        if($table!=NULL&&is_string($table)){
+            if(is_array(self::$mapping)){
+                foreach (self::$mapping as $k =>$v){
+                    if(isset($v[$table])){
+                        self::$link_read->exec("use $k");
+                        self::$link_write->exec("use $k");
+                        break;
+                    }
+                }
+            }
+        }
+             
         if (strncasecmp($sql, 'select', 6) == 0) {
+            //read from the database
+            //operator the slave
             try{
              $statment=self::$link_read->prepare($sql);
              
@@ -120,6 +198,8 @@ class Afx_Db_Adapter
             }
             
         } else {
+            //delete or update 
+            //operator the master
             $ret = TRUE;
             try {
                 self::$link_write->beginTransaction();
