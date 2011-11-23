@@ -59,6 +59,27 @@ if(file_exists($lock_file)){
          $class=(isset($options['c'])?$options['c']:$options['-c']);
          $class_file=$cwd."/application/controllers/".$class.".php";
          $view_path=$cwd."/application/views/".$class;
+           if(file_exists($class_file)){
+            if(!empty($options['a'])||!empty($options['-a'])){
+               $action=(isset($options['a'])?$options['a']:$options['-a']);
+               $class_temp=file_get_contents($class_file);
+                if(preg_match("/$action"."Action\\(\\)/", $class_temp)){
+                    exit("Action Exists\n");
+                }
+//               echo $class_temp;
+               $lastindex=strripos($class_temp, '}');
+               $class_temp=substr($class_temp, 0,$lastindex);
+               $action_temp="   public function $action"."Action(){\n   }\n";
+               $class_temp.=$action_temp."}";
+               echo "write Action \n $class_file \n";
+               file_put_contents($class_file, $class_temp);
+               $view_file=$view_path."/".strtolower($action).".phtml";
+               echo "write view \n $view_file \n";
+               $view_temp=str_replace('#CLASS', $action, $view_temp);
+               file_put_contents($view_file, $view_temp);
+              exit();
+            }
+           }
          $class_temp=str_replace('#CLASS', $class, $template);
          $view_temp=str_replace('#CLASS', $class, $view_temp);
          echo "class file=$class_file\nclass template=$class_temp";
@@ -153,24 +174,39 @@ function __autoload ($class_name)
 }'),
 array('name'=>$path.'/conf/conf.php','content'=>"<?php
 return array(
-  'db'=>array(
+ 'db'=>array(
   'type'=>'mysql',
   'master'=>array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'','dbname'=>'pdcp','charset'=>'utf8'),
   'slave'=>array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'','dbname'=>'pdcp','charset'=>'utf8'),
   ),
+  'memcache'=>array(
+    'type'=>'memcache',
+    'master'=>array('host'=>'192.168.188.73','port'=>'11211'),
+    'slave'=>array('host'=>'192.168.188.73','port'=>'11213')
+  ),
+  'mongo'=>array(
+   'type'=>'mongo',
+   'master'=>array('host'=>'127.0.0.1','port'=>'27017'),
+   'slave'=>array('host'=>'127.0.0.1','port'=>'27017')
+  )
+  
 );"),
  array('name'=>$path.'/application/Bootstrap.php','content'=>'<?php 
+<?php 
 class Bootstrap  extends Yaf_Bootstrap_Abstract{
     public function _initDb(){
         if(file_exists("conf/conf.php"))  {  
         $conf=include_once"conf/conf.php";
         Afx_Db_Adapter::initOption($conf);
+        Afx_Db_Memcache::initOption($conf);
+        $mmc=Afx_Db_Memcache::Instance();
         spl_autoload_unregister(array("Yaf_Loader", "autoload"));
         spl_autoload_register("__autoload");
         }
     }
     public function _initModel(){
-          ob_start();
+        session_start();
+        ob_start();
     }
 }
  '),
@@ -232,9 +268,28 @@ foreach ($conf['files'] as &$k){
     }
   }
 }
+
 if(file_exists('Adapter.php')&&file_exists($path.'/application/library/Afx/Db/')){
-    file_put_contents($path.'/application/library/Afx/Db/Adapter.php', file_get_contents('Adapter.php'));
+//    file_put_contents($path.'/application/library/Afx/Db/Adapter.php', file_get_contents('Adapter.php'));
+    echo 'cpoy Adapter.php',"\n";
+    copy('Adapter.php', $path.'/application/library/Afx/Db/Adapter.php');
+    unlink('Adapter.php');
 }
 if(file_exists('Abstract.php')&&file_exists($path.'/application/library/Afx/Module/')){
-    file_put_contents($path.'/application/library/Afx/Module/Abstract.php', file_get_contents('Abstract.php'));
+//    file_put_contents($path.'/application/library/Afx/Module/Abstract.php', file_get_contents('Abstract.php'));
+      echo 'cpoy Abstract.php',"\n";
+      copy('Abstract.php', $path.'/application/library/Afx/Module/Abstract.php');
+      unlink('Abstract.php');
+}
+if(file_exists('Memcache.php')&&file_exists($path.'/application/library/Afx/Db/')){
+//    file_put_contents($path.'/application/library/Afx/Db/Memcache.php', file_get_contents('Memcache.php'));
+      echo 'cpoy Memcache.php',"\n";
+      copy('Memcache.php',$path.'/application/library/Afx/Db/Memcache.php');
+      unlink('Memcache.php');
+}
+if(file_exists('Exception.php')&&file_exists($path.'/application/library/Afx/Db/')){
+//    file_put_contents($path.'/application/library/Afx/Db/Exception.php', file_get_contents('Exception.php'));
+     echo 'cpoy Exception.php',"\n";
+     copy('Exception.php',$path.'/application/library/Afx/Db/Exception.php');
+     unlink('Exception.php');
 }
