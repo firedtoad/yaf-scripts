@@ -19,6 +19,9 @@
 
 class Afx_Module_Abstract{
     
+    
+    protected  $_tablename='t_dummy';
+    
     /**
      * 
      * @var Afx_Db_Adapter
@@ -188,9 +191,9 @@ class Afx_Module_Abstract{
                  //here we only deal with string and numeric  
                  //we need deal others future
                     if(is_string($v)){
-                        $sql.="'$v',";
+                        $sql.=$this->getAdapter()->quote($v,PDO::PARAM_STR).",";
                     }else{
-                        $sql.="$v,";
+                        $sql.=$this->getAdapter()->quote($v).",";
                     }
              }
              //here we add ',' more one time so drop it again
@@ -215,9 +218,10 @@ class Afx_Module_Abstract{
                        //here we only deal with string and numeric  
                        //we need deal others future
                        if(is_string($v)){
-                           $sql.="$k='$v',";
+                           $sql.=$k."=".$this->getAdapter()->quote($v,PDO::PARAM_STR).",";
                        }elseif (is_numeric($v)){
-                           $sql.="$k=$v,";
+                           $sql.=$k."=".$this->getAdapter()->quote($v).",";
+                           
                        }
                     }
                     //',' more add again drop it
@@ -255,12 +259,16 @@ class Afx_Module_Abstract{
    /**
     * select an object from the database id is the specific id
     * @param long $id
+    * @param  string $server master|slave default slave
     * @return Afx_Module_Abstract if success else NULL
     */
    
-   public function from_db($id){
+   public function getOne($id,$server='slave'){
+     if(!is_numeric($id)){
+         return NULL;
+     }
      $sql=sprintf('SELECT * FROM '.$this->_tablename.' WHERE id=%d',$id);
-     $arr=$this->getAdapter()->execute($sql,$this->_tablename);
+     $arr=$this->getAdapter()->execute($sql,$this->_tablename,$server);
      if($arr&&is_array($arr[0])){
          $this->_obj=self::fromArray($arr[0]);;
          $this->setProperties($arr[0]);
@@ -268,17 +276,74 @@ class Afx_Module_Abstract{
      }
      return NULL;
    }   
+   /**
+    * Find One Object from database use specific key and value 
+    * @param string $k  
+    * @param  mixed $v  
+    * @param  string $server master|slave default slave
+    * @return Afx_Module_Abstract
+    */
+   
+   
+   public function findOne($k,$v,$server='slave'){
+       if(empty($k)||empty($v)){
+           return NULL;
+       }
+       if(is_string($v)){    
+       $sql=sprintf('SELECT * FROM '.$this->_tablename." WHERE %s=%s",$k,$this->getAdapter()->quote($v,PDO::PARAM_STR));
+       }elseif (is_numeric($v)){
+       $sql=sprintf('SELECT * FROM '.$this->_tablename." WHERE %s=%d",$k,$this->getAdapter()->quote($v));   
+       }
+      $arr=$this->getAdapter()->execute($sql,$this->_tablename,$server);
+      if($arr&&is_array($arr[0])){
+           $this->_obj=self::fromArray($arr[0]);
+           $this->setProperties($arr[0]);
+           return $this;
+      }
+      return NULL;
+   }
+   /**
+    * find An List from the Database
+    * @param array $options
+    * @param int $limit
+    * @param int $offset
+    * @param  string $server master|slave default slave
+    * @return array
+    */
+   
+   public function findList($options=array(),$limit=1000,$offset=0,$server='slave'){
+       if(!count($options)){
+           return array();
+       }
+       $sql='SELECT * FROM '.$this->_tablename." WHERE ";
+       foreach ($options as  $k=>$v){
+           if(is_string($v)){    
+           $sql.=$k."=".$this->getAdapter()->quote($v,PDO::PARAM_STR).",";
+           }elseif(is_numeric($v)){
+           $sql.=$k."=".$this->getAdapter()->quote($v).",";
+           }
+       }
+       $sql=substr($sql, 0,strlen($sql)-1);
+       if(is_numeric($offset)&&is_numeric($limit)){
+           if($offset==0)
+           $sql .=" limit $limit";
+           else
+           $sql .=" limit $offset,$limit";
+       }
+       return $this->getAdapter()->execute($sql,$this->_tablename,$server);
+       
+   }
    
    /**
-    * 
     * get a list from the database 
     * @param int $offset
     * @param int $limit
+    * @param  string $server master|slave default slave
     * @return array
     */
-   public function getList($offset=0,$limit=1000){
+   public function getList($offset=0,$limit=1000,$server='slave'){
        $sql=sprintf('SELECT * FROM '.$this->_tablename." LIMIT $offset,$limit ");
-       return $this->getAdapter()->execute($sql,$this->_tablename);
+       return $this->getAdapter()->execute($sql,$this->_tablename,$server);
    }
    
 }

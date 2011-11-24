@@ -91,8 +91,6 @@ class Afx_Db_Memcache
      */
     private function _initConnection ()
     {
-//        echo '<pre>';
-        
         if(is_array(self::$options)&&isset(self::$options['memcache'])){
                static $keys_wanted=array('host'=>1,'port'=>1);
                $arr=self::$options['memcache'];
