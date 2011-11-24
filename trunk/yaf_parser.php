@@ -23,14 +23,16 @@ function parse_yaf($path) {
 						$class_name = '';
 						$functions = array ();
 						$index = 0;
+						$staticModify=array();
 						$file_content = file_get_contents ( $v );
 						if (preg_match_all ( '/YAF_INIT_CLASS_ENTRY\\(ce,(.*?),.*\\)/', $file_content, $matchs )) {
 							if (isset ( $matchs [1] [0] )) {
-								echo $class_name = $matchs [1] [0], "\n";
+								 $class_name = $matchs [1] [0];
 							}
 						}else{
 						  continue;	
 						}
+						
 						if (preg_match_all ( '/proto (.*) .*::(.*)/', $file_content, $matchs )) {
 							if (isset ( $matchs [1] ) && is_array ( $matchs [1] )) {
 								if (isset ( $matchs [2] ) && is_array ( $matchs [2] )) {
@@ -60,6 +62,19 @@ function parse_yaf($path) {
 									}
 								}
 							}
+						}
+						if(preg_match_all('/PHP_ME\\(.*?,(.*?),.*\\)/', $file_content, $m)){
+						      if(is_array($m[1])&&count($m[1])){
+						          $i=0;
+						          foreach ($m[1] as $k=>$v){
+						              if(isset($m[0][$i])){
+						                  if(strstr($m[0][$i], 'ZEND_ACC_STATIC')){
+						                      $staticModify[trim($v)]='static';
+						                  }
+						              }
+						              ++$i;
+						          }
+						      }
 						}
 						$matches = array ();
 						$class_name = str_replace ( '"', '', $class_name );
@@ -95,13 +110,33 @@ function parse_yaf($path) {
 									$class_temp .= " * @param $p[0] $p[1] $p[2] $p[3]\n";
 								}
 							}
-							$class_temp .= " * @return\n";
+							$ret='';
+							if(preg_match_all('/instance/i',  $v2 ['func'],$mc)){
+//							    print_r($v2 ['func']);
+                               $ret=$class_name;
+							}
+							$class_temp .= " * @return $ret\n";
 							$class_temp .= " * @since 2.0\n*/\n\n";
+							if(strstr($v2 ['func'], 'static')==FALSE){
+							    $m=array();
+							    if(preg_match_all('/function\s+(.*?)\\(/', $v2 ['func'], $m)){
+//                                     print_r($m);
+							        if(isset($m[1][0])){
+//							            print_r($m[1][0]);
+//							            echo "\n";
+//							            print_r($staticModify);
+							            if(isset($staticModify[$m[1][0]])){
+							            $v2 ['func']=str_replace('function', 'static function', $v2 ['func']);
+							            }
+							        }
+							    }
+							}
+							
 							$class_temp .= $v2 ['func'] . "\n";
-						
 						}
 						$class_temp .= "}";
-						print_r ( $class_temp );
+//						print_r($staticModify);
+//						print_r ( $class_temp );
 						file_put_contents($libpath."/$class_name.php", $class_temp);
 						echo "\n";
 					
