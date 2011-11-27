@@ -72,6 +72,13 @@ class Afx_Db_Memcache
         return TRUE;
     }
     
+    public static function reInitConnection(){
+        if(self::$instance){
+            self::$instance->_initConnection();
+        }
+    }
+    
+    
     /**
      * 
      * get the Configuration
@@ -164,13 +171,20 @@ class Afx_Db_Memcache
      * The Memcache get Wrapper
      *  Read from the Slave
      * @param string $key
+     * @param string $server can be master|slave default slave 
      * @return mixed
      */
     
-    public function get($key){
+    public function get($key,$server='slave'){
          
        if($key!=NULL&&self::$read_cache){
+           if($server=='slave'){    
            return self::$read_cache->get($key);
+           }elseif($server=='master'){
+               if(self::$write_cache){
+                   return self::$write_cache->get($key);
+               }
+           }
        }
     }
     
@@ -215,7 +229,6 @@ class Afx_Db_Memcache
      * @param int $flag
      * @return Boolean
      */
-    
     
     public function replace($key,$value,$timeout=60,$flag=MEMCACHE_COMPRESSED){
         if(self::$write_cache){
@@ -276,13 +289,14 @@ class Afx_Db_Memcache
      /**
      * The Memcache getMulti Wrapper
      * @param  array $arr
+     * @param string $server can be master|slave default slave 
      * @return array 
      */
-    public function getMulti($arr=array()){
+    public function getMulti($arr=array(),$server='slave'){
         if(is_array($arr)&&count($arr)){
             $ret=array();
             foreach ($arr as $k) {
-                $ret[]=$this->get($k);
+                $ret[]=$this->get($k,$server);
             }
             return $ret;
         }
