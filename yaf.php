@@ -125,6 +125,7 @@ if (file_exists($lock_file)) {
         echo "class file=$class_file\nclass template=$class_temp";
         echo "write class file\n";
         file_put_contents($class_file, $class_temp);
+        exit("done\n");
     }
     exit(usage());
 }
