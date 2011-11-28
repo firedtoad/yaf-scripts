@@ -6,7 +6,7 @@
  * LICENSE
  * This source file is part of the Afx Framework
  * You can copy or distibute this file but don't delete the LICENSE content here
- * @copyright  Copyright (c) 2005-2011 Zend Technologies USA Inc. (http://www.zend.com)
+ * @copyright  Copyright (c) 2011 Banggo Technologies China Inc. (http://www.banggo.com)
  * @license Free
  */
 
@@ -17,7 +17,7 @@
  * @author Afx team && firedtoad@gmail.com &&dietoad@gmail.com
  */
 
-class Afx_Module_Abstract{
+abstract  class Afx_Module_Abstract{
     
     
     protected  $_tablename='t_dummy';
@@ -101,12 +101,12 @@ class Afx_Module_Abstract{
     }
     /**
      * constructor function 
-     * for single instance it need to be protected
      * Here We use Default Db Adapter
      */
-	protected  function __construct(){
+	public  function __construct(){
 	    $this->_adapter=Afx_Db_Adapter::instance();
     }
+    
     /**
      * Convert An Array To A stdClass 
      * @param array $arr

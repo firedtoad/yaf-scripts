@@ -1,6 +1,7 @@
 #!/usr/bin/env php
 <?php
 date_default_timezone_set('Asia/Shanghai');
+$table_prefix='t_';
 function usage(){
 echo <<<H
 usage php yaf.php [options]
@@ -36,13 +37,13 @@ $view_temp = '<html>
  Hi From #CLASS template!
 </body>
 </html>';
-$m_temp = '
+$m_temp = "
 <?php
 class #CLASS extends Afx_Module_Abstract
 {
-    protected $_tablename = "t_#TABLE";
-    public static $_instance = NULL;
-    protected function __construct ()
+    protected \$_tablename = '$table_prefix#TABLE';
+    public static \$_instance = NULL;
+    public function __construct ()
     {
         parent::__construct();
     }
@@ -51,13 +52,13 @@ class #CLASS extends Afx_Module_Abstract
      */
     public static function Instance ()
     {
-        if (NULL === self::$_instance) {
-            self::$_instance = new self();
+        if (NULL === self::\$_instance) {
+            self::\$_instance = new self();
         }
-        return self::$_instance;
+        return self::\$_instance;
     }
 }
-';
+";
 function parse_command_line ($str)
 {
     global $options;
