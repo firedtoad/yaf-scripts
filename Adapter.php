@@ -230,16 +230,16 @@ class Afx_Db_Adapter
      * The main method execute the sql string
      * @param string $sql the sql string
      * @param string $table  on which table 
-     * @param string $server  which server 
+    * @param  Boolean $master whether operator the master
      * @param Boolean $usetrans whether use transaction default False
      * @throws PDOException 
      * @throws Exception
      */    
-    public function execute ($sql,$table=NULL,$server='slave',$usetrans=FALSE)
+    public function execute ($sql,$table=NULL,$master=FALSE,$usetrans=FALSE)
     {
         self::$lastSql=$sql;
-        self::$lastServer=$server;
-         echo $sql,"\n";
+        self::$lastServer=$master;
+        echo $sql,"\n";
         //we want to map the table in different database so
         //selete the default database every time
         if(self::$db_changed!=NULL){
@@ -262,12 +262,12 @@ class Afx_Db_Adapter
             }
         }
         if (strncasecmp($sql, 'select', 6) == 0) {
-            //read from the database
+            //read from the database  s
             //default operator the slave
             try{
-             if($server=='slave'){
+             if($master==FALSE){
              $statment=self::$link_read->prepare($sql);
-             }elseif($server=='master'){
+             }elseif($master==TRUE){
              $statment=self::$link_write->prepare($sql);
              }
              if($statment instanceof  PDOStatement){

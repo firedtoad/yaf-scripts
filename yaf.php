@@ -43,6 +43,10 @@ class #CLASS extends Afx_Module_Abstract
 {
     protected \$_tablename = '$table_prefix#TABLE';
     public static \$_instance = NULL;
+
+    /**
+     * @return  #CLASS
+     */  
     public function __construct ()
     {
         parent::__construct();
@@ -118,8 +122,12 @@ if (file_exists($lock_file)) {
         if (empty($options['m']) && empty($options['-m'])) {
             exit("module is missing");
         }
+        
         $class = (isset($options['m']) ? $options['m'] : $options['-m']);
         $class_file = $cwd . "/application/models/" . $class . ".php";
+        if(file_exists($class_file)){
+             exit("File exists\n");
+        }
         $class_temp = str_replace('#TABLE', strtolower($class), $m_temp);
         $class_temp = str_replace('#CLASS', $class, $class_temp);
         echo "class file=$class_file\nclass template=$class_temp";
@@ -210,7 +218,6 @@ return array(
 );"), 
 array('name' => $path . '/application/Bootstrap.php', 
 'content' => '<?php 
-<?php 
 class Bootstrap  extends Yaf_Bootstrap_Abstract{
     public function _initDb(){
         if(file_exists("conf/conf.php"))  {  
@@ -223,8 +230,10 @@ class Bootstrap  extends Yaf_Bootstrap_Abstract{
         }
     }
     public function _initModel(){
+         ob_start();
+    }
+    public function _initSession(){
         session_start();
-        ob_start();
     }
 }
  '), 
