@@ -171,16 +171,16 @@ class Afx_Db_Memcache
      * The Memcache get Wrapper
      *  Read from the Slave
      * @param string $key
-     * @param string $server can be master|slave default slave 
+     * @param Boolean $master can be true or false
      * @return mixed
      */
     
-    public function get($key,$server='slave'){
+    public function get($key,$master=FALSE){
          
        if($key!=NULL&&self::$read_cache){
-           if($server=='slave'){    
+           if($master==FALSE){    
            return self::$read_cache->get($key);
-           }elseif($server=='master'){
+           }elseif($master==TRUE){
                if(self::$write_cache){
                    return self::$write_cache->get($key);
                }
@@ -289,14 +289,14 @@ class Afx_Db_Memcache
      /**
      * The Memcache getMulti Wrapper
      * @param  array $arr
-     * @param string $server can be master|slave default slave 
+     * @param Boolean $master can be true|false default false 
      * @return array 
      */
-    public function getMulti($arr=array(),$server='slave'){
+    public function getMulti($arr=array(),$master=FALSE){
         if(is_array($arr)&&count($arr)){
             $ret=array();
             foreach ($arr as $k) {
-                $ret[]=$this->get($k,$server);
+                $ret[]=$this->get($k,$master);
             }
             return $ret;
         }
@@ -333,5 +333,9 @@ class Afx_Db_Memcache
     }
     function __destruct ()
     {}
+    public function __call($m,$arg){
+        
+    }
+    
 }
 ?>
