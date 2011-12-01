@@ -113,7 +113,7 @@ abstract  class Afx_Module_Abstract{
      * @param mixed $value
      */
     public function __set($name,$value){
-       self::$_instance->$name=$value;
+       $this->$name=$value;
     }
     
     /**
@@ -311,6 +311,7 @@ abstract  class Afx_Module_Abstract{
      }
      return NULL;
    }   
+   
    /**
     * Find One Object from database use specific key and value 
     * @param string $k  
@@ -318,7 +319,6 @@ abstract  class Afx_Module_Abstract{
     * @param  Boolean $master whether operator the master
     * @return Afx_Module_Abstract
     */
-   
    
    public function findOne($k,$v,$master=FALSE){
        if(empty($k)||empty($v)){
@@ -337,9 +337,12 @@ abstract  class Afx_Module_Abstract{
       }
       return NULL;
    }
-   
-   
-   
+   /**
+    * select the result from database use conditions
+    * @param int $limit
+    * @param int $offset
+    * @param Boolean $master
+    */   
    public function select($limit=100,$offset=0,$master=FALSE){
        $limit=$this->_limit>$limit?$this->_limit:$limit;
        $sql='SELECT ';
@@ -379,8 +382,8 @@ abstract  class Afx_Module_Abstract{
        }
        return $this->getAdapter()->execute($sql,$this->_tablename,$master);
    }
+   
    /**
-    * 
     * set limit
     * @param int $limit
     */
@@ -389,8 +392,8 @@ abstract  class Afx_Module_Abstract{
        $this->_limit=$limit;
        return $this;
    }
+   
    /**
-    * 
     * set order
     * @param string $key
     * @param string $desc 
@@ -402,7 +405,6 @@ abstract  class Afx_Module_Abstract{
    }
    
    /**
-    * 
     * set where condition
     * @param string $key
     * @param mixed $value
@@ -412,7 +414,6 @@ abstract  class Afx_Module_Abstract{
        return $this;
    }
    /**
-    * 
     * set fetch field
     * @param array $fields
     */
@@ -426,7 +427,7 @@ abstract  class Afx_Module_Abstract{
    }
    
    /**
-    * find An List from the Database
+    * find A List from the Database
     * @param array $options
     * @param int $limit
     * @param int $offset
