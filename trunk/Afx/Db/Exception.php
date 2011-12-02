@@ -9,7 +9,6 @@
  * @copyright  Copyright (c) 2011 Banggo Technologies China Inc. (http://www.banggo.com)
  * @license Free
  */
-
 /**
  * @package Afx_Db
  * @version $Id Exception.php

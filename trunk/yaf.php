@@ -207,18 +207,23 @@ array('name' => $path . '/conf/conf.php',
 return array(
  'db'=>array(
   'type'=>'mysql',
-  'master'=>array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'','dbname'=>'pdcp','charset'=>'utf8'),
-  'slave'=>array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'','dbname'=>'pdcp','charset'=>'utf8'),
+  'master'=>array('host'=>'192.168.188.73','port'=>'3306','user'=>'firedtoad','password'=>'','dbname'=>'pdcp','charset'=>'utf8'),
+  'slave'=>array(
+0=>array('host'=>'192.168.188.73','port'=>'3306','user'=>'firedtoad','password'=>'','dbname'=>'pdcp','charset'=>'utf8'),
+1=>array('host'=>'192.168.188.73','port'=>'3306','user'=>'firedtoad','password'=>'','dbname'=>'pdcp','charset'=>'utf8'),
+2=>array('host'=>'192.168.188.73','port'=>'3306','user'=>'firedtoad','password'=>'','dbname'=>'pdcp','charset'=>'utf8'),
+3=>array('host'=>'192.168.188.73','port'=>'3306','user'=>'firedtoad','password'=>'','dbname'=>'pdcp','charset'=>'utf8'),
+),
   ),
   'memcache'=>array(
     'type'=>'memcache',
     'master'=>array('host'=>'192.168.188.73','port'=>'11211'),
-    'slave'=>array('host'=>'192.168.188.73','port'=>'11213')
+    'slave'=>array('host'=>'192.168.188.73','port'=>'11211')
   ),
   'mongo'=>array(
    'type'=>'mongo',
-   'master'=>array('host'=>'127.0.0.1','port'=>'27017'),
-   'slave'=>array('host'=>'127.0.0.1','port'=>'27017')
+   'master'=>array('host'=>'192.168.188.73','port'=>'27017'),
+   'slave'=>array('host'=>'192.168.188.73','port'=>'27017')
   )
   
 );"), 
@@ -294,7 +299,7 @@ array('name' => $path . '/application/views/index/index.phtml',
     Hellow World!
  </body>
 </html>'), 
-array('name' => $path . '/application/views/error/error.phtml', 
+array('name' => $path . '/application/views/error/index.phtml', 
 'content' => '
   error occured
  ')));
@@ -329,6 +334,5 @@ if (file_exists('Afx')) {
     } else {
          echo 'Windows copy Lib', "\n";
          echo `move /Y Afx $path/application/library`;
-        //`mov /Y Afx\\*.* $path/application/library/Afx `;
     }
 }
