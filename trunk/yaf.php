@@ -1,9 +1,10 @@
 #!/usr/bin/env php
 <?php
 date_default_timezone_set('Asia/Shanghai');
-$table_prefix='t_';
-function usage(){
-echo <<<H
+$table_prefix = 't_';
+function usage ()
+{
+    echo <<<H
 usage php yaf.php [options]
 Options
 path=[dir] the directory where you place the project
@@ -122,11 +123,10 @@ if (file_exists($lock_file)) {
         if (empty($options['m']) && empty($options['-m'])) {
             exit("module is missing");
         }
-        
         $class = (isset($options['m']) ? $options['m'] : $options['-m']);
         $class_file = $cwd . "/application/models/" . $class . ".php";
-        if(file_exists($class_file)){
-             exit("File exists\n");
+        if (file_exists($class_file)) {
+            exit("File exists\n");
         }
         $class_temp = str_replace('#TABLE', strtolower($class), $m_temp);
         $class_temp = str_replace('#CLASS', $class, $class_temp);
@@ -150,28 +150,34 @@ $conf = array('path' => './',
 $path . '/application/controllers', $path . '/application/views', 
 $path . '/application/views/index', $path . '/application/views/error', 
 $path . '/application/modules', $path . '/application/library', 
-$path . '/application/library/Afx', $path . '/application/library/Afx/Db', 
-$path . '/application/library/Afx/Module', $path . '/application/models', 
+$path . '/application/library/', $path . '/application/models', 
 $path . '/application/plugins'), 
 'files' => array(
 array('name' => $path . '/index.php', 
-'content' => '<?php
-date_default_timezone_set("Asia/Shanghai");
-define("APP_PATH",  $_SERVER["DOCUMENT_ROOT"]);
-if(file_exists(APP_PATH."/conf/auto.php")){
-  require_once APP_PATH."/conf/auto.php";
+'content' => "<?php
+date_default_timezone_set('Asia/Shanghai');
+//error_reporting(0);
+define('APP_PATH', \$_SERVER['DOCUMENT_ROOT']);
+if (file_exists(APP_PATH . '/conf/auto.php')) {
+    require_once APP_PATH . '/conf/auto.php';
+     spl_autoload_register('__autoload');
 }
-$app  = new Yaf_Application(APP_PATH . "/conf/application.ini", "production");
-$app->bootstrap()->run();'), 
+\$app = new Yaf_Application(APP_PATH . '/conf/application.ini', 'production');
+\$app->bootstrap()->run();"), 
 array('name' => $path . '/.htaccess', 
 'content' => 'RewriteEngine On
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule .* /index.php'), 
 array('name' => $path . '/conf/application.ini', 
 'content' => '[production]
-application.directory=APP_PATH "/application
+application.directory=APP_PATH "/application"
 application.dispatcher.catchException=TRUE
 application.use_spl_autoload=1
+smarty.template_dir=APP_PATH "/application/views/template"
+smarty.cache_dir=APP_PATH "/application/views/cache"
+smarty.compile_dir=APP_PATH "/application/views/cache"
+smarty.cache=FALSE
+smarty.debug=FALSE
 '), 
 array('name' => $path . '/conf/auto.php', 
 'content' => '<?php
@@ -189,7 +195,7 @@ function __autoload ($class_name)
         foreach ($paths as $path) {
             if (file_exists($path . "/" . $class_name . ".php")) {
                 require_once $path . "/" . $class_name . ".php";
-            }
+             }
         }
     }
     if (file_exists($class_name . "php")) {
@@ -217,26 +223,44 @@ return array(
   
 );"), 
 array('name' => $path . '/application/Bootstrap.php', 
-'content' => '<?php 
-class Bootstrap  extends Yaf_Bootstrap_Abstract{
-    public function _initDb(){
-        if(file_exists("conf/conf.php"))  {  
-        $conf=include_once"conf/conf.php";
-        Afx_Db_Adapter::initOption($conf);
-        Afx_Db_Memcache::initOption($conf);
-        $mmc=Afx_Db_Memcache::Instance();
-        spl_autoload_unregister(array("Yaf_Loader", "autoload"));
-        spl_autoload_register("__autoload");
+'content' => "<?php
+class Bootstrap extends Yaf_Bootstrap_Abstract
+{
+    public function _initDb (Yaf_Dispatcher \$dispatcher)
+    {
+        if (file_exists(\"conf/conf.php\")) {
+            \$conf = include_once \"conf/conf.php\";
+            Afx_Db_Adapter::initOption(&\$conf);
+            Afx_Db_Memcache::initOption(\$conf);
+             // \$mmc=Afx_Db_Memcache::Instance();
+        //spl_autoload_unregister(array(\"Yaf_Loader\", \"autoload\"));
         }
     }
-    public function _initModel(){
-         ob_start();
+    public function _initModel (Yaf_Dispatcher \$dispatcher)
+    {
+        ob_start();
     }
-    public function _initSession(){
-        session_start();
+    public function _initSession (Yaf_Dispatcher \$dispatcher)
+    {
+      //  session_start();
+    }
+    public function _initSmarty (Yaf_Dispatcher \$dispatcher)
+    {
+//        \$conf = Yaf_Application::app()->getConfig()->get('smarty');
+//        Yaf_Registry::set('config', Yaf_Application::app()->getConfig());
+//        \$con = Yaf_Registry::get('smarty');
+//        \$smart_adapter = new Afx_Smarty_Adapter(NULL, 
+//        array('cache' => \$conf->get('compile_dir'), 
+//        'compile_dir' => \$conf->get('compile_dir'), 
+//        'template_dir' => \$conf->get('template_dir'), 
+//        'cache_dir' => \$conf->get('cache_dir'),
+//        'debug' => \$conf->get('debug'),
+//        ));
+//       \$dispatcher->disableView();
+//       \$dispatcher->setView(\$smart_adapter);
     }
 }
- '), 
+ "), 
 array('name' => $path . '/application/controllers/Index.php', 
 'content' => '<?php
 class IndexController extends Yaf_Controller_abstract {
@@ -270,7 +294,7 @@ array('name' => $path . '/application/views/index/index.phtml',
     Hellow World!
  </body>
 </html>'), 
-array('name' => $path . '/application/views/error/index.phtml', 
+array('name' => $path . '/application/views/error/error.phtml', 
 'content' => '
   error occured
  ')));
@@ -297,27 +321,14 @@ if (is_array($conf['files'])) {
         }
     }
 }
-if (file_exists('Adapter.php') &&
- file_exists($path . '/application/library/Afx/Db/')) {
-    echo 'cpoy Adapter.php', "\n";
-    copy('Adapter.php', $path . '/application/library/Afx/Db/Adapter.php');
-    unlink('Adapter.php');
-}
-if (file_exists('Abstract.php') &&
- file_exists($path . '/application/library/Afx/Module/')) {
-    echo 'cpoy Abstract.php', "\n";
-    copy('Abstract.php', $path . '/application/library/Afx/Module/Abstract.php');
-    unlink('Abstract.php');
-}
-if (file_exists('Memcache.php') &&
- file_exists($path . '/application/library/Afx/Db/')) {
-    echo 'cpoy Memcache.php', "\n";
-    copy('Memcache.php', $path . '/application/library/Afx/Db/Memcache.php');
-    unlink('Memcache.php');
-}
-if (file_exists('Exception.php') &&
- file_exists($path . '/application/library/Afx/Db/')) {
-    echo 'cpoy Exception.php', "\n";
-    copy('Exception.php', $path . '/application/library/Afx/Db/Exception.php');
-    unlink('Exception.php');
+if (file_exists('Afx')) {
+    echo 'copy Lib', "\n";
+    if (PHP_OS == 'Linux') {
+        echo 'Linux copy Lib', "\n";
+        `mv -f Afx $path/application/library/`;
+    } else {
+         echo 'Windows copy Lib', "\n";
+         echo `move /Y Afx $path/application/library`;
+        //`mov /Y Afx\\*.* $path/application/library/Afx `;
+    }
 }
