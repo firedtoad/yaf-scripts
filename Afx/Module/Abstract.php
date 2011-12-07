@@ -447,7 +447,7 @@ abstract class Afx_Module_Abstract
      * @param int $offset
      * @param int $limit
      * @param  Boolean $master whether operator the masters
-     * @return array
+     * @return array 
      */
     public function getList ($offset = 0, $limit = 1000, $master = FALSE)
     {
@@ -455,6 +455,15 @@ abstract class Afx_Module_Abstract
         'SELECT * FROM ' . $this->_tablename . " LIMIT $offset,$limit ");
         return $this->getAdapter()->execute($sql, $this->_tablename, $master);
     }
+    
+    public function offset(){
+        
+    }
+    
+    
+    /**
+     * for debug use
+     */
     public function p ()
     {
         echo '<pre>';

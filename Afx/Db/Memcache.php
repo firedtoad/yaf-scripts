@@ -208,10 +208,10 @@ class Afx_Db_Memcache
      */
     public function flush ()
     {
-        /*        
+               
         if(self::$write_cache){
          return    self::$write_cache->flush();
-        }*/
+        }
     }
     /**
      * 

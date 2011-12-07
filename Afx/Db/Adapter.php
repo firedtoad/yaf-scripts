@@ -166,7 +166,7 @@ class Afx_Db_Adapter
         try {
             foreach ($slave as $k=>$v){
             ++self::$slave_num;
-            $dsn='mysql:host='.$v['host'].';port='.$v['port'].';dbname='.$v['dbname'].';charset='.$v['charset'].';';
+           $dsn='mysql:host='.$v['host'].';port='.$v['port'].';dbname='.$v['dbname'].';charset='.$v['charset'].';';
             self::$link_read[] = new PDO($dsn, $v['user'], $v['password'],array(PDO::ATTR_TIMEOUT => 1, PDO::ATTR_PERSISTENT => 1) );
             }        
             self::$link_write = new PDO(self::$write_dsn, $master['user'], 
@@ -266,7 +266,7 @@ class Afx_Db_Adapter
             }
         }
         if (strncasecmp($sql, 'select', 6) == 0) {
-            //read from the database  s
+            //read from the database  
             //default operator the slave
             try {
                 if ($master == FALSE) {
