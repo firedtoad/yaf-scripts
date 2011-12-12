@@ -22,7 +22,7 @@ abstract class Afx_Module_Abstract
      * 
      * @var Afx_Db_Adapter
      */
-    protected $_adapter = NULL;
+    protected static $_adapter = NULL;
     /**
      * store the Object fetch from database and compare for update
      * @var stdClass
@@ -48,6 +48,31 @@ abstract class Afx_Module_Abstract
      * @var string $_sql
      */
     protected $_sql = NULL;
+    /**
+     * start offset
+     * @var int
+     */
+    protected $_offset = 0;
+    /**
+     * like condition
+     * @var string
+     */
+    protected $_like = NULL;
+    /**
+     * store the or condition
+     * @var array
+     */
+    protected $_wor = array();
+    /**
+     * store the join condition
+     * @var array
+     */
+    protected $_join = array();
+    /**
+     * the on condition
+     * @var array
+     */
+    protected $_on = array();
     /**
      * @var string order
      */
@@ -80,7 +105,7 @@ abstract class Afx_Module_Abstract
      */
     public function getAdapter ()
     {
-        return $this->_adapter;
+        return self::$_adapter;
     }
     /**
      * Magic function __set
@@ -106,18 +131,16 @@ abstract class Afx_Module_Abstract
      * Set the Db Adapter
      * @param Afx_Db_Adapter $_adapter
      */
-    public function setAdapter ($_adapter)
+    public static function setAdapter ($_adapter)
     {
-        $this->_adapter = $_adapter;
+        self::$_adapter = $_adapter;
     }
     /**
      * constructor function 
      * Here We use Default Db Adapter
      */
     public function __construct ()
-    {
-        $this->_adapter = Afx_Db_Adapter::instance();
-    }
+    {}
     /**
      * Convert An Array To A stdClass 
      * @param array $arr
@@ -154,7 +177,7 @@ abstract class Afx_Module_Abstract
      * apply an array keys as self properties
      * @param array $arr
      */
-    private function setProperties ($arr = array())
+    public function setProperties ($arr = array())
     {
         if (! is_array($arr)) {
             return;
@@ -332,6 +355,7 @@ abstract class Afx_Module_Abstract
     {
         $limit = $this->_limit > $limit ? $this->_limit : $limit;
         $sql = 'SELECT ';
+        $hasWhere = 0;
         if (! $this->_sql) {
             if (! is_array($this->_field) || count($this->_field) == 0) {
                 $sql .= "*";
@@ -345,17 +369,48 @@ abstract class Afx_Module_Abstract
                 $sql = substr($sql, 0, $lastIndex);
             }
             $sql .= " FROM " . $this->_tablename;
+            if (is_array($this->_join) && count($this->_join) > 0) {
+                foreach ($this->_join as $k => $v) {
+                    $sql .= " JOIN " . $v[0] . " ON " . $this->_tablename . "." .
+                     $v[1] . "=" . $v[0] . "." . $v[2];
+                }
+            }
             if (is_array($this->_where) && count($this->_where) > 0) {
                 $sql .= " WHERE ";
+                $hasWhere = 1;
                 foreach ($this->_where as $k => $v) {
-                    if (is_string($v)) {
-                        $sql .= "$k=" .
-                         $this->getAdapter()->quote($v, PDO::PARAM_STR) . " AND ";
-                    } elseif (is_numeric($v)) {
-                        $sql .= "$k=" . $this->getAdapter()->quote($v) . " AND ";
+                    if (is_string($v[1])) {
+                        $sql .= "$k  " . $v[0] .
+                         $this->getAdapter()->quote($v[1], PDO::PARAM_STR) .
+                         " AND ";
+                    } elseif (is_numeric($v[1])) {
+                        $sql .= "$k " . $v[0] . $this->getAdapter()->quote(
+                        $v[1]) . " AND ";
                     }
                 }
                 $lastIndex = strrpos($sql, 'AND');
+                if ($lastIndex > 0) {
+                    $sql = substr($sql, 0, $lastIndex);
+                }
+            }
+            if (is_array($this->_wor) && count($this->_wor) > 0) {
+                if (! $hasWhere) {
+                    $sql .= ' WHERE ';
+                } else {
+                    $sql .= ' OR ';
+                }
+                foreach ($this->_wor as $k => &$v) {
+                    if (is_string($v[1])) {
+                        $sql .= "$k " . $v[0] .
+                         $this->getAdapter()->quote($v[1], PDO::PARAM_STR) .
+                         " OR ";
+                    } else 
+                        if (is_numeric($v)) {
+                            $sql .= "$k " . $v[0] .
+                             $this->getAdapter()->quote($v[1]) . " OR ";
+                        }
+                }
+                $lastIndex = strrpos($sql, 'OR');
                 if ($lastIndex > 0) {
                     $sql = substr($sql, 0, $lastIndex);
                 }
@@ -367,6 +422,12 @@ abstract class Afx_Module_Abstract
                 $sql .= " limit " . $this->_limit;
             }
         }
+        $this->_where = array();
+        $this->_join = array();
+        $this->_on = array();
+        $this->_like = NULL;
+        $this->_field = NULL;
+        $this->_wor = array();
         return $this->getAdapter()->execute($sql, $this->_tablename, $master);
     }
     /**
@@ -392,10 +453,20 @@ abstract class Afx_Module_Abstract
      * set where condition
      * @param string $key
      * @param mixed $value
+     * @param string $exp can be [>|<|!=|>=|<=|like|nlike]
+     * @return Afx_Module_Abstract
      */
-    public function where ($key, $value)
+    public function where ($key = NULL, $value = NULL, $exp = '=')
     {
-        $this->_where[$key] = $value;
+        static $allowExp = array('>' => 1, '<' => 1, '!=' => 1, '>=' => 1, 
+        '<=' => 1, 'like' => 1, 'nlike' => 1);
+        if (! $exp)
+            $exp = '=';
+        if (! isset($allowExp[$exp])) {
+            return $this;
+        }
+        if ($key)
+            $this->_where[$key] = array($exp, $value);
         return $this;
     }
     /**
@@ -409,6 +480,7 @@ abstract class Afx_Module_Abstract
                 $this->_field[$k] = $v;
             }
         }
+        return $this;
     }
     /**
      * find A List from the Database
@@ -455,12 +527,66 @@ abstract class Afx_Module_Abstract
         'SELECT * FROM ' . $this->_tablename . " LIMIT $offset,$limit ");
         return $this->getAdapter()->execute($sql, $this->_tablename, $master);
     }
-    
-    public function offset(){
-        
+    /**
+     * 
+     * set offset
+     * @param int $offset
+     * @return Afx_Module_Abstract
+     */
+    public function offset ($offset)
+    {
+        $this->_offset = $offset;
+        return $this;
     }
+    /**
+     * 
+     * set like condition
+     * @param string $key
+     * @param mixed $value
+     * @return Afx_Module_Abstract
     
-    
+    public function like ($key,$value)
+    {
+      if($key)
+      $this->_like=$key ." LIKE %$value% ";
+      return $this;
+    }
+     */
+    /**
+     * 
+     * set join condition
+     * @param string $table the table to join
+     * @param string $lkey the left join key
+     * @param string $rkey the right join key
+     * @return Afx_Module_Abstract
+     */
+    public function join ($table, $lkey, $rkey)
+    {
+        if ($table)
+            $this->_join[] = array($table, $lkey, $rkey);
+        return $this;
+    }
+    /**
+     * 
+     * set or conditon 
+     * @param string $key
+     * @param mix $value
+     * @param string $exp can be [>|<|!=|>=|<=|like|nlike]
+     * @return Afx_Module_Abstract
+     */
+    public function wor ($key = NULL, $value = NULL, $exp = '=')
+    {
+        static $allowExp = array('>' => 1, '<' => 1, '!=' => 1, '>=' => 1, 
+        '<=' => 1, 'like' => 1, 'nlike' => 1);
+        if (! $exp)
+            $exp = '=';
+        if (! isset($allowExp[$exp])) {
+            return $this;
+        }
+        if ($key)
+            $this->_wor[$key] = array($exp, $value);
+        return $this;
+    }
     /**
      * for debug use
      */
