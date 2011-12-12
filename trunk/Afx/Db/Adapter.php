@@ -111,7 +111,7 @@ class Afx_Db_Adapter
     /**
      * @return Afx_Db_Adapter
      */
-    public static function instance ()
+    public static function Instance ()
     {
         if (NULL === self::$instance) {
             self::$instance = new self();
@@ -167,11 +167,12 @@ class Afx_Db_Adapter
             foreach ($slave as $k=>$v){
             ++self::$slave_num;
            $dsn='mysql:host='.$v['host'].';port='.$v['port'].';dbname='.$v['dbname'].';charset='.$v['charset'].';';
-            self::$link_read[] = new PDO($dsn, $v['user'], $v['password'],array(PDO::ATTR_TIMEOUT => 1, PDO::ATTR_PERSISTENT => 1) );
+            self::$link_read[] = new PDO($dsn, $v['user'], $v['password'],array(PDO::ATTR_TIMEOUT => 1, PDO::ATTR_PERSISTENT => 1,
+            PDO::MYSQL_ATTR_INIT_COMMAND=>'set names utf8') );
             }        
             self::$link_write = new PDO(self::$write_dsn, $master['user'], 
             $master['password'], 
-            array(PDO::ATTR_TIMEOUT => 1, PDO::ATTR_PERSISTENT => 1));
+            array(PDO::ATTR_TIMEOUT => 1, PDO::ATTR_PERSISTENT => 1,PDO::MYSQL_ATTR_INIT_COMMAND=>'set names utf8'));
         } catch (PDOException $e) {
             throw new Exception($e);
         }
@@ -182,8 +183,9 @@ class Afx_Db_Adapter
      */
     public static function getSalve ()
     {
-        if (self::$link_read) {
-            return self::$link_read;
+         $server_num=rand(0, self::$slave_num)%self::$slave_num;
+        if (self::$link_read[$server_num]) {
+            return self::$link_read[$server_num];
         }
         return NULL;
     }
@@ -243,7 +245,7 @@ class Afx_Db_Adapter
         
         self::$lastSql = $sql;
         self::$lastServer = $master;
-        echo $sql, "  serverNum=$server_num\n";
+        echo $sql, "  serverNum=$server_num\n<br/>";
         //we want to map the table in different database so
         //selete the default database every time
         if (self::$db_changed != NULL) {
@@ -294,14 +296,14 @@ class Afx_Db_Adapter
             } catch (PDOException $e) {
                 throw new Exception($e);
             }
-        } else {
+        } else if(strncasecmp($sql, 'delete', 6)==0||strncasecmp($sql, 'update', 6)==0) {
             //delete or update 
             //operator the master
             $ret = TRUE;
             try {
                 if ($usetrans)
                     self::$link_write->beginTransaction();
-                self::$link_write->exec($sql);
+                    self::$link_write->exec($sql);
                 if ($usetrans)
                     self::$link_write->commit();
                 if (self::$link_write->errorCode() != '00000') {
@@ -315,6 +317,10 @@ class Afx_Db_Adapter
                 throw new Exception($e);
             }
             return $ret;
+        }else{
+            $stmt= self::$link_write->prepare($sql);
+            $stmt->execute();
+            return $stmt->fetchALL();
         }
     }
 }
