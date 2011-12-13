@@ -255,6 +255,7 @@ class Afx_Db_Adapter
         }
         //check if we need mapping 
         //Notice that it exists a bug when two database have the same table name 
+      
         if ($table != NULL && is_string($table)) {
             if (is_array(self::$mapping) && count(self::$mapping)) {
                 foreach (self::$mapping as $k => $v) {
@@ -320,6 +321,12 @@ class Afx_Db_Adapter
         }else{
             $stmt= self::$link_write->prepare($sql);
             $stmt->execute();
+           if ($stmt->errorCode() != '00000') {
+                    self::$lastError = $stmt->errorInfo();
+                    throw new PDOException(
+                    implode('', $stmt->errorInfo()), 
+                    $stmt->errorCode());
+                }
             return $stmt->fetchALL();
         }
     }

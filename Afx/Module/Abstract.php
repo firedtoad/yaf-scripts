@@ -353,7 +353,7 @@ abstract class Afx_Module_Abstract
      */
     public function select ($limit = 100, $offset = 0, $master = FALSE)
     {
-        $limit = $this->_limit > $limit ? $this->_limit : $limit;
+        $this->_limit = $limit == 100 ? $this->_limit : $limit;
         $sql = 'SELECT ';
         $hasWhere = 0;
         if (! $this->_sql) {
@@ -428,6 +428,7 @@ abstract class Afx_Module_Abstract
         $this->_like = NULL;
         $this->_field = NULL;
         $this->_wor = array();
+        $this->_limit = 1;
         return $this->getAdapter()->execute($sql, $this->_tablename, $master);
     }
     /**
@@ -465,7 +466,7 @@ abstract class Afx_Module_Abstract
         if (! isset($allowExp[$exp])) {
             return $this;
         }
-        if ($key)
+        if ($key && $value)
             $this->_where[$key] = array($exp, $value);
         return $this;
     }
@@ -586,6 +587,85 @@ abstract class Afx_Module_Abstract
         if ($key)
             $this->_wor[$key] = array($exp, $value);
         return $this;
+    }
+    public function insert ($arr = array(), $master = FALSE, $usetrans = FALSE)
+    {
+        
+        if (is_array($arr) && count($arr) > 0) {
+            if (! isset($arr[0])) {
+                $sql = 'INSERT INTO ' . $this->_tablename . ' (';
+                foreach (array_keys($arr) as $k) {
+                    if($k=='id')continue;
+                    $sql .= $k . ',';
+                }
+                $lastIndex = strrpos($sql, ',');
+                $sql = substr($sql, 0, $lastIndex);
+                $sql .= ') VALUES (';
+                foreach ($arr as $k=> $v) {
+                    if($k=='id')continue;
+                    if (is_string($v)) {
+                        $sql .= $this->getAdapter()->quote($v, PDO::PARAM_STR) .
+                         ',';
+                    } else if (is_numeric($v)) {
+                            $sql .= $this->getAdapter()->quote($v) . ',';
+                    }else if(is_null($v)){
+                        $sql .= $this->getAdapter()->quote('0', PDO::PARAM_STR) .
+                         ',';
+                    }
+                } 
+                $lastIndex = strrpos( $sql,',');
+                $sql = substr($sql, 0, $lastIndex);
+                $sql .= ')';
+                return $this->getAdapter()->execute($sql, $this->_tablename, 
+                $master, $usetrans);
+            }
+            if (isset($arr[0])) {
+                $sql='';
+                if (is_array($arr[0]) && count($arr[0]) > 0) {
+                    $sql = 'INSERT INTO ' . $this->_tablename . ' (';
+                    foreach (array_keys($arr[0]) as $k) {
+                        if($k=='id')continue;
+                        $sql .= $k . ',';
+                    }
+
+                    $lastIndex = strrpos($sql,',');
+                    $sql = substr($sql, 0, $lastIndex);
+                    $sql .= ') VALUES';
+                    
+                    foreach ($arr as $k => $v) {
+                       
+                        if (is_array($v) && count($v) > 0) {
+                            $sql.=' (';
+                            foreach ($v as $k1 => $v1) {
+                                
+                               if($k1=='id')continue;
+                              
+                               if(is_string($v1)){
+                                    $sql .= $this->getAdapter()->quote($v1, PDO::PARAM_STR) .',';
+                               }else if (is_numeric($v1)){
+                                    $sql .= $this->getAdapter()->quote($v) . ',';
+                               }else if(is_null($v1)){
+                                   $sql .= $this->getAdapter()->quote('0', PDO::PARAM_STR) .',';
+                               }
+                            
+                            }
+                             $lastIndex = strrpos($sql,',');
+                             $sql = substr($sql, 0, $lastIndex);
+                             $sql.=' ),';
+                          
+                        }
+                        
+                    }
+                       $lastIndex = strrpos($sql,',');
+                       $sql = substr($sql, 0, $lastIndex);
+                      
+                }
+                if($sql){
+//                    echo $sql,"\n"; 
+                    $this->getAdapter()->execute($sql,$this->_tablename,$master,$usetrans);
+                }
+            } 
+        }
     }
     /**
      * for debug use
