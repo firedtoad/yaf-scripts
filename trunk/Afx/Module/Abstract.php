@@ -247,7 +247,7 @@ abstract class Afx_Module_Abstract
                 //calculate  the properties need te be update
                 $arr_update = array_intersect_key($arr_this, 
                 $arr_old);
-                $arr_real_update = array_diff($arr_update, $arr_old);
+                $arr_real_update = array_diff_assoc($arr_update, $arr_old);
                 if (count($arr_real_update)) {
                     $sql .= ' set ';
                     foreach ($arr_real_update as $k => $v) {
@@ -257,9 +257,12 @@ abstract class Afx_Module_Abstract
                         $v)) {
                             $sql .= $k . "=" .
                              $this->getAdapter()->quote($v, PDO::PARAM_STR) . ",";
-                        } elseif (is_numeric($v)) {
-                            $sql .= $k . "=" . $this->getAdapter()->quote($v) .
+                        } elseif (is_numeric($v)&&$v!=0) {
+                            $sql .= $k . "=" . $this->getAdapter()->quote($v,PDO::PARAM_INT) .
                              ",";
+                        }else if($v==0){
+                        	 $sql .= $k . "=" . $this->getAdapter()->quote('0') .
+                             ","; 
                         }
                     }
                     //',' more add again drop it
