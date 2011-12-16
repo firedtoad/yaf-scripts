@@ -285,6 +285,33 @@ class Afx_Db_Memcache
             self::$write_cache->getVersion());
         }
     }
+    
+    public function getExtendsStatus($type,$id=0,$limit=1000){
+//    	echo $type,$id,$limit,"<br/>";
+    	return self::$write_cache->getExtendedStats($type,$id,$limit);
+    }
+    
+    public function dump($prefix=NULL){
+    	$arr=self::$options['memcache']['master'];
+    	$key=$arr['host'].":".$arr['port'];
+        $allSlabs=$this->getExtendsStatus('slabs');
+    	$allItems=$this->getExtendsStatus('items');
+    	foreach ($allSlabs as $server=>$slabs) {
+    		foreach ($slabs as $slabId=>$slabMeta) {
+    			
+    	   		$cdump = $this->getExtendsStatus('cachedump',(int)$slabId,1000);
+                if(is_array($cdump[$key])){
+                	foreach ($cdump[$key] as $k=>$v) {
+                		if($prefix&&strncasecmp($prefix, $k,strlen($prefix))==0){
+                	     	Afx_Debug_Helper::print_r($k,"\n",$v);
+                		}else if(!$prefix){
+                		Afx_Debug_Helper::print_r($k,"\n",$v);
+                		}
+                	}
+                }
+    		}
+    	}
+    }
     /**
      * The Memcache getMulti Wrapper
      * @param  array $arr

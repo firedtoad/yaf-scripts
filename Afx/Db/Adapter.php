@@ -225,9 +225,7 @@ class Afx_Db_Adapter
      */
     public function quote ($str, $style = PDO::PARAM_INT)
     {
-        //        echo $style;
-        //        echo PDO::PARAM_INT;
-        if ($str != NULL)
+        if ($str !== NULL)
             return self::$link_write->quote($str, $style);
     }
     /**
@@ -242,7 +240,6 @@ class Afx_Db_Adapter
     public function execute ($sql, $table = NULL, $master = FALSE, $usetrans = FALSE)
     {
         $server_num=rand(0, self::$slave_num)%self::$slave_num;
-        
         self::$lastSql = $sql;
         self::$lastServer = $master;
         echo $sql, "  serverNum=$server_num\n<br/>";
@@ -297,14 +294,15 @@ class Afx_Db_Adapter
             } catch (PDOException $e) {
                 throw new Exception($e);
             }
-        } else if(strncasecmp($sql, 'delete', 6)==0||strncasecmp($sql, 'update', 6)==0) {
-            //delete or update 
+        } else if(strncasecmp($sql, 'delete', 6)==0||strncasecmp($sql, 'update', 6)==0||strncasecmp($sql, 'insert', 6)==0) {
+            //delete or update  or insert
             //operator the master
             $ret = TRUE;
             try {
                 if ($usetrans)
                     self::$link_write->beginTransaction();
                     self::$link_write->exec($sql);
+                    
                 if ($usetrans)
                     self::$link_write->commit();
                 if (self::$link_write->errorCode() != '00000') {
@@ -317,6 +315,7 @@ class Afx_Db_Adapter
                 $ret = FALSE;
                 throw new Exception($e);
             }
+           
             return $ret;
         }else{
             $stmt= self::$link_write->prepare($sql);
