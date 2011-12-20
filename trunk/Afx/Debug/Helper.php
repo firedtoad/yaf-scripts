@@ -55,5 +55,17 @@ class Afx_Debug_Helper
         }
         echo '</pre>';
     }
+    public function exportExtension(){
+    	 $color=dechex(rand(0,255)).dechex(rand(0,255)).dechex(rand(0,255));
+        if(strlen($color)!=6){
+            $color.=str_repeat(0, 6-strlen($color));
+        }
+        echo "<pre style=\"background-color:#$color;\">";
+        $arr=func_get_args();
+        foreach ($arr as $k=>$v) {
+           ReflectionExtension::export($v);
+        }
+        echo '</pre>';
+    }
 }
 ?>
