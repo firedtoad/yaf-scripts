@@ -215,7 +215,8 @@ abstract class Afx_Module_Abstract {
 				return FALSE;
 			
 		//concat the keys
-			$keystr = implode ( ',', array_keys ( $arr ) );
+			$keystr = implode ( '`,`', array_keys ( $arr ) );
+			
 			//here we add ',' more one time so drop it
 			$sql .= substr ( $keystr, 0, strlen ( $keystr ) );
 			$sql .= ') VALUES(';
@@ -244,7 +245,7 @@ abstract class Afx_Module_Abstract {
 				if (count ( $arr_real_update )) {
 					$sql .= ' set ';
 					foreach ( $arr_real_update as $k => $v ) {
-						$sql .= $k . "=" . $this->_processValue($v) . ",";
+						$sql .= '`'.$k . "`=" . $this->_processValue($v) . ",";
 					}
 					//',' more add again drop it
 					$sql = substr ( $sql, 0, strlen ( $sql ) - 1 );
@@ -271,7 +272,7 @@ abstract class Afx_Module_Abstract {
 		if (! $rid) {
 			return FALSE;
 		}
-		$sql = sprintf ( 'DELETE  FROM ' . $this->_tablename . ' WHERE id=%d', $rid );
+		$sql = sprintf ( 'DELETE  FROM ' . $this->_tablename . ' WHERE `id`=%d', $rid );
 		return $this->getAdapter ()->execute ( $sql, $this->_tablename );
 	}
 	/**
@@ -328,7 +329,7 @@ abstract class Afx_Module_Abstract {
 				$sql .= "*";
 			} elseif (count ( $this->_field )) {
 				foreach ( $this->_field as $k => $v ) {
-					$sql .= $v . ",";
+					$sql .='`'. $v . "`,";
 				}
 			}
 			$lastIndex = strrpos ( $sql, ',' );
@@ -345,7 +346,7 @@ abstract class Afx_Module_Abstract {
 				$sql .= " WHERE ";
 				$hasWhere = 1;
 				foreach ( $this->_where as $k => $v ) {
-					$sql .= "$v[0]  " . $v [1] . $this->_processValue($v[2]) . " AND ";
+					$sql .= "`$v[0]`  " . $v [1] . $this->_processValue($v[2]) . " AND ";
 				}
 				$lastIndex = strrpos ( $sql, 'AND' );
 				if ($lastIndex > 0) {
@@ -359,7 +360,7 @@ abstract class Afx_Module_Abstract {
 					$sql .= ' OR ';
 				}
 				foreach ( $this->_wor as $k => &$v ) {
-					$sql .= "$v[0] " . $v [1] . $this->_processValue($v[2]) . " OR ";
+					$sql .= "`$v[0]` " . $v [1] . $this->_processValue($v[2]) . " OR ";
 			    }
 				$lastIndex = strrpos ( $sql, 'OR' );
 				if ($lastIndex > 0) {
@@ -443,7 +444,7 @@ abstract class Afx_Module_Abstract {
 		}
 		$sql = 'SELECT * FROM ' . $this->_tablename . " WHERE ";
 		foreach ( $options as $k => $v ) {
-			$sql .= $k . "=" . $this->_processValue ( $v ) . " AND ";
+			$sql .='`'. $k . "`=" . $this->_processValue ( $v ) . " AND ";
 		}
 		$sql = substr ( $sql, 0, strlen ( $sql ) - 4 );
 		if (is_numeric ( $offset ) && is_numeric ( $limit )) {
@@ -529,7 +530,7 @@ abstract class Afx_Module_Abstract {
 				foreach ( array_keys ( $arr ) as $k ) {
 					if ($k == 'id')
 						continue;
-					$sql .= $k . ',';
+				$sql .= '`'.$k . '`,';
 				}
 				$lastIndex = strrpos ( $sql, ',' );
 				$sql = substr ( $sql, 0, $lastIndex );
@@ -550,7 +551,7 @@ abstract class Afx_Module_Abstract {
 					foreach ( array_keys ( $arr [0] ) as $k ) {
 						if ($k == 'id')
 							continue;
-						$sql .= $k . ',';
+						$sql .= '`'.$k . '`,';
 					}
 					
 					$lastIndex = strrpos ( $sql, ',' );
@@ -585,7 +586,8 @@ abstract class Afx_Module_Abstract {
 	 * @param mixed $v
 	 */
 	private function _processValue($v) {
-		$ret = '';
+//		$ret = '';
+//		echo gettype($v)=='NULL',"<br/>";
 		switch (strtolower ( gettype ( $v ) )) {
 			
 			case 'string' :
@@ -601,7 +603,7 @@ abstract class Afx_Module_Abstract {
 				$ret = $this->getAdapter ()->quote ( $v, PDO::PARAM_BOOL );
 				break;
 			case 'null' :
-				$ret = $this->getAdapter ()->quote ( $v, PDO::PARAM_NULL );
+				$ret = $this->getAdapter ()->quote ( '0', PDO::PARAM_STR );
 				break;
 			default :
 				break;
