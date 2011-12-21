@@ -21,6 +21,10 @@ abstract class Afx_Module_Abstract {
 	
 	protected $_tablename = 't_dummy';
 	/**
+	 * var Boolean 
+	 */
+	protected $_distinct=FALSE;
+	/**
 	 * 
 	 * @var Afx_Db_Adapter
 	 */
@@ -89,6 +93,10 @@ abstract class Afx_Module_Abstract {
 	 * @var Afx_Module_Abstract::
 	 */
 	protected static $_instance = NULL;
+
+	protected $_groupBy;
+	
+	
 	/**
 	 * Get the pure Object Fetch From The database
 	 * @return stdClass 
@@ -96,6 +104,7 @@ abstract class Afx_Module_Abstract {
 	public function getObj() {
 		return $this->_obj;
 	}
+	
 	/**
 	 * set The Pure Object  for insert 
 	 * @deprecated
@@ -215,7 +224,7 @@ abstract class Afx_Module_Abstract {
 				return FALSE;
 			
 		//concat the keys
-			$keystr = implode ( '`,`', array_keys ( $arr ) );
+			$keystr = '`'.implode ( '`,`', array_keys ( $arr ) ).'`';
 			
 			//here we add ',' more one time so drop it
 			$sql .= substr ( $keystr, 0, strlen ( $keystr ) );
@@ -323,6 +332,9 @@ abstract class Afx_Module_Abstract {
 	public function select($limit = 100, $offset = 0, $master = FALSE) {
 		$this->_limit = $limit == 100 ? $this->_limit : $limit;
 		$sql = 'SELECT ';
+		if($this->_distinct){
+			$sql.='DISTINCT ';
+		}
 		$hasWhere = 0;
 		if (! $this->_sql) {
 			if (! is_array ( $this->_field ) || count ( $this->_field ) == 0) {
@@ -367,6 +379,9 @@ abstract class Afx_Module_Abstract {
 					$sql = substr ( $sql, 0, $lastIndex );
 				}
 			}
+			if($this->_groupBy){
+				$sql.=' GROUP BY `'.$this->_groupBy.'` ';
+			}
 			if ($this->_order) {
 				$sql .= $this->_order;
 			}
@@ -380,7 +395,9 @@ abstract class Afx_Module_Abstract {
 		$this->_like = NULL;
 		$this->_field = NULL;
 		$this->_wor = array ();
-		$this->_limit = 1;
+		$this->_limit = 100;
+		$this->_distinct=FALSE;
+		$this->_groupBy=NULL;
 		return $this->getAdapter ()->execute ( $sql, $this->_tablename, $master );
 	}
 	/**
@@ -414,7 +431,7 @@ abstract class Afx_Module_Abstract {
 		if (! isset ( $allowExp [$exp] )) {
 			return $this;
 		}
-		if ($key && $value)
+		if ($key)
 			$this->_where [] = array ($key,$exp, $value );
 		return $this;
 	}
@@ -618,6 +635,20 @@ abstract class Afx_Module_Abstract {
 		$sql=sprintf('SELECT COUNT(*) FROM `%s`',$this->_tablename);
 		$ret=$this->getAdapter()->execute($sql,$this->_tablename);
 		return isset($ret['0']['COUNT(*)'])?$ret['0']['COUNT(*)']:0;
+	}
+	/**
+	 * @return Afx_Module_Abstract
+	 */
+	public function distinct(){
+		$this->_distinct=TRUE;
+		return $this;
+	}
+	 /**
+	 * @return Afx_Module_Abstract
+	 */
+	public function groupBy($key){
+		if($key)$this->_groupBy=$key;
+		return $this;
 	}
 	/**
 	 * for debug use

@@ -78,6 +78,10 @@ class Afx_Db_Adapter
      */
     private static $lastError = NULL;
     /**
+     * var Boolean
+     */
+    public static $debug=TRUE;
+    /**
      * @return the $mapping
      */
     public static function getMapping ()
@@ -242,7 +246,9 @@ class Afx_Db_Adapter
         $server_num=rand(0, self::$slave_num)%self::$slave_num;
         self::$lastSql = $sql;
         self::$lastServer = $master;
+        if(self::$debug){
         echo $sql, "  serverNum=$server_num\n<br/>";
+        }
         //we want to map the table in different database so
         //selete the default database every time
         if (self::$db_changed != NULL) {
