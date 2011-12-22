@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 date_default_timezone_set('Asia/Shanghai');
-$table_prefix = 't_';
+$table_prefix = '';
 function usage ()
 {
     echo <<<H
@@ -31,9 +31,9 @@ class #CLASSController extends Yaf_Controller_abstract {
 }
 ';
 $view_temp = '<html>
-<header>
+<head>
 <title></title>
-</header>
+</head>
 <body>
  Hi From #CLASS template!
 </body>
@@ -43,14 +43,17 @@ $m_temp = "
 class #CLASS extends Afx_Module_Abstract
 {
     protected \$_tablename = '$table_prefix#TABLE';
-    public static \$_instance = NULL;
+    /**
+    * @var #CLASS \$_instance
+    */
+    protected static \$_instance = NULL;
 
     /**
      * @return  #CLASS
      */  
     public function __construct ()
     {
-        parent::__construct();
+       
     }
     /**
      * @return #CLASS
@@ -64,6 +67,18 @@ class #CLASS extends Afx_Module_Abstract
     }
 }
 ";
+function tr($str){
+	$len=strlen($str);
+	$str=strtolower($str);
+	$rs.=strtoupper($str[0]);
+	for ($i = 1; $i < $len; ++$i) {
+		$rs.=$str[$i];
+		if($str[$i]=='_'){
+			$str[$i+1]=strtoupper($str[$i+1]);
+		}
+	}
+	return $rs;
+}
 function parse_command_line ($str)
 {
     global $options;
@@ -83,9 +98,10 @@ if (file_exists($lock_file)) {
             exit("controller is missing");
         }
         $class = (isset($options['c']) ? $options['c'] : $options['-c']);
-        $class_file = $cwd . "/application/controllers/" . $class . ".php";
+        $class=tr($class);
+        $class_file = $cwd . "/application/controllers/" . tr($class) . ".php";
         $view_path = $cwd . "/application/views/" . $class;
-        if (file_exists($class_file)) {
+        if (file_exists(tr($class_file))) {
             if (! empty($options['a']) || ! empty($options['-a'])) {
                 $action = (isset($options['a']) ? $options['a'] : $options['-a']);
                 $class_temp = file_get_contents($class_file);
@@ -123,17 +139,19 @@ if (file_exists($lock_file)) {
         if (empty($options['m']) && empty($options['-m'])) {
             exit("module is missing");
         }
-        $class = (isset($options['m']) ? $options['m'] : $options['-m']);
-        $class_file = $cwd . "/application/models/" . $class . ".php";
-        if (file_exists($class_file)) {
+       $class = (isset($options['m']) ? $options['m'] : $options['-m']);
+        $class_temp = str_replace('#TABLE', ($class), $m_temp);
+       $class=str_replace('_', '', tr($class));
+       $class_file = $cwd . "/application/models/" . ($class) . ".php";
+       if (file_exists($class_file)) {
             exit("File exists\n");
         }
-        $class_temp = str_replace('#TABLE', strtolower($class), $m_temp);
         $class_temp = str_replace('#CLASS', $class, $class_temp);
         echo "class file=$class_file\nclass template=$class_temp";
         echo "write class file\n";
+    
         file_put_contents($class_file, $class_temp);
-        exit("done\n");
+        exit("done\n"); 
     }
     exit(usage());
 }
@@ -154,9 +172,9 @@ $path . '/application/library/', $path . '/application/models',
 $path . '/application/plugins'), 
 'files' => array(
 array('name' => $path . '/index.php', 
-'content' => "<?php
-date_default_timezone_set('Asia/Shanghai');
-//error_reporting(0);
+'content' => "date_default_timezone_set('Asia/Shanghai');
+error_reporting(E_ALL&E_ERROR|E_WARNING);
+ini_set('apc.debug', '0');
 define('APP_PATH', \$_SERVER['DOCUMENT_ROOT']);
 if (file_exists(APP_PATH . '/conf/auto.php')) {
     require_once APP_PATH . '/conf/auto.php';
@@ -167,7 +185,8 @@ if (file_exists(APP_PATH . '/conf/auto.php')) {
 array('name' => $path . '/.htaccess', 
 'content' => 'RewriteEngine On
 RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule .* /index.php'), 
+RewriteRule ^/Public/(.*\.(js|ico|gif|jpg|png|css|bmp|html|wsdl|pdf|xls)$) /Public/$1 [L]
+RewriteRule ^/.* /index.php [L]'), 
 array('name' => $path . '/conf/application.ini', 
 'content' => '[production]
 application.directory=APP_PATH "/application"
@@ -185,14 +204,17 @@ $root = $_SERVER["DOCUMENT_ROOT"] . "/application";
 $load_paths = "$root/models;$root/modules;$root/plugins;$root/library";
 function __autoload ($class_name)
 {
-    ob_clean();
-    global $load_paths;
+//    ob_clean();
+    global $load_paths,$root;
     $paths = explode(";", $load_paths);
     if (strstr($class_name, "_")) {
         $class_name = str_ireplace("_", "/", $class_name);
     }
     if (is_array($paths)) {
         foreach ($paths as $path) {
+             if($path=="$root/models"){
+                $class_name = str_ireplace("/", "_", $class_name);
+             }
             if (file_exists($path . "/" . $class_name . ".php")) {
                 require_once $path . "/" . $class_name . ".php";
              }
@@ -204,66 +226,72 @@ function __autoload ($class_name)
 }'), 
 array('name' => $path . '/conf/conf.php', 
 'content' => "<?php
+<?php
 return array(
  'db'=>array(
   'type'=>'mysql',
-  'master'=>array('host'=>'192.168.188.73','port'=>'3306','user'=>'firedtoad','password'=>'','dbname'=>'pdcp','charset'=>'utf8'),
+  'master'=>array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'root','dbname'=>'bgopendb','charset'=>'utf8'),
   'slave'=>array(
-0=>array('host'=>'192.168.188.73','port'=>'3306','user'=>'firedtoad','password'=>'','dbname'=>'pdcp','charset'=>'utf8'),
-1=>array('host'=>'192.168.188.73','port'=>'3306','user'=>'firedtoad','password'=>'','dbname'=>'pdcp','charset'=>'utf8'),
-2=>array('host'=>'192.168.188.73','port'=>'3306','user'=>'firedtoad','password'=>'','dbname'=>'pdcp','charset'=>'utf8'),
-3=>array('host'=>'192.168.188.73','port'=>'3306','user'=>'firedtoad','password'=>'','dbname'=>'pdcp','charset'=>'utf8'),
-),
-  ),
+				array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'root','dbname'=>'bgstore','charset'=>'utf8'),
+				array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'root','dbname'=>'bgstore','charset'=>'utf8'),
+				array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'root','dbname'=>'bgstore','charset'=>'utf8'),
+				array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'root','dbname'=>'bgstore','charset'=>'utf8')
+               ),
+            ),
   'memcache'=>array(
     'type'=>'memcache',
-    'master'=>array('host'=>'192.168.188.73','port'=>'11211'),
-    'slave'=>array('host'=>'192.168.188.73','port'=>'11211')
+    'master'=>array('host'=>'192.168.149.43','port'=>'11211'),
+    'slave'=>array('host'=>'192.168.149.43','port'=>'11211')
   ),
   'mongo'=>array(
    'type'=>'mongo',
-   'master'=>array('host'=>'192.168.188.73','port'=>'27017'),
-   'slave'=>array('host'=>'192.168.188.73','port'=>'27017')
-  )
-  
+   'master'=>array('host'=>'127.0.0.1','port'=>'27017','db'=>'pstore','collection'=>'pstore'),
+   'slave'=>array(
+			    array('host'=>'127.0.0.1','port'=>'27017','db'=>'pstore','collection'=>'pstore'),
+			    array('host'=>'127.0.0.1','port'=>'27017','db'=>'pstore','collection'=>'pstore'),
+			    array('host'=>'127.0.0.1','port'=>'27017','db'=>'pstore','collection'=>'pstore')
+                )
+           )
 );"), 
 array('name' => $path . '/application/Bootstrap.php', 
 'content' => "<?php
-class Bootstrap extends Yaf_Bootstrap_Abstract
-{
-    public function _initDb (Yaf_Dispatcher \$dispatcher)
-    {
-        if (file_exists(\"conf/conf.php\")) {
-            \$conf = include_once \"conf/conf.php\";
-            Afx_Db_Adapter::initOption(&\$conf);
-            Afx_Db_Memcache::initOption(\$conf);
-             // \$mmc=Afx_Db_Memcache::Instance();
-        //spl_autoload_unregister(array(\"Yaf_Loader\", \"autoload\"));
-        }
-    }
-    public function _initModel (Yaf_Dispatcher \$dispatcher)
-    {
-        ob_start();
-    }
-    public function _initSession (Yaf_Dispatcher \$dispatcher)
-    {
-      //  session_start();
-    }
-    public function _initSmarty (Yaf_Dispatcher \$dispatcher)
-    {
-//        \$conf = Yaf_Application::app()->getConfig()->get('smarty');
-//        Yaf_Registry::set('config', Yaf_Application::app()->getConfig());
-//        \$con = Yaf_Registry::get('smarty');
-//        \$smart_adapter = new Afx_Smarty_Adapter(NULL, 
-//        array('cache' => \$conf->get('compile_dir'), 
-//        'compile_dir' => \$conf->get('compile_dir'), 
-//        'template_dir' => \$conf->get('template_dir'), 
-//        'cache_dir' => \$conf->get('cache_dir'),
-//        'debug' => \$conf->get('debug'),
-//        ));
-//       \$dispatcher->disableView();
-//       \$dispatcher->setView(\$smart_adapter);
-    }
+class Bootstrap extends Yaf_Bootstrap_Abstract {
+	public function _initDb(Yaf_Dispatcher \$dispatcher) {
+		if (file_exists ( \"conf/conf.php\" )) {
+			\$conf = include_once \"conf/conf.php\";
+			Afx_Db_Adapter::initOption ( \$conf );
+			Afx_Db_Mongo::setOptions(\$conf);
+			Afx_Module_Abstract::setAdapter ( Afx_Db_Adapter::Instance () );
+			Afx_Db_Memcache::initOption (\$conf );
+			Afx_Db_Adapter::\$debug=FALSE;
+		}
+		if (file_exists ( 'conf/mapping.php' )) {
+			\$mapping = include 'conf/mapping.php';
+			Afx_Db_Adapter::setMapping ( \$mapping );
+		}
+	}
+	public function _initModel(Yaf_Dispatcher \$dispatcher) {
+		ob_start ();
+	}
+	public function _initSession(Yaf_Dispatcher \$dispatcher) {
+        session_start();
+		header ( 'content-type:text/html;charset=utf-8' );
+	}
+	public function _initSmarty(Yaf_Dispatcher \$dispatcher) {
+		//        \$conf = Yaf_Application::app()->getConfig()->get('smarty');
+		//        Yaf_Registry::set('config', Yaf_Application::app()->getConfig());
+		//        \$con = Yaf_Registry::get('smarty');
+		//        \$smart_adapter = new Afx_Smarty_Adapter(NULL, 
+		//        array('cache' => \$conf->get('compile_dir'), 
+		//        'compile_dir' => \$conf->get('compile_dir'), 
+		//        'template_dir' => \$conf->get('template_dir'), 
+		//        'cache_dir' => \$conf->get('cache_dir'),
+		//        'debug' => \$conf->get('debug'),
+		//        ));
+		\$dispatcher->disableView ();
+		//      \$dispatcher->setView(\$smart_adapter);
+	}
+
 }
  "), 
 array('name' => $path . '/application/controllers/Index.php', 
