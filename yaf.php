@@ -169,7 +169,7 @@ $path . '/application/controllers', $path . '/application/views',
 $path . '/application/views/index', $path . '/application/views/error', 
 $path . '/application/modules', $path . '/application/library', 
 $path . '/application/library/', $path . '/application/models', 
-$path . '/application/plugins'), 
+$path . '/application/plugins', $path . '/Public'),
 'files' => array(
 array('name' => $path . '/index.php', 
 'content' => "date_default_timezone_set('Asia/Shanghai');
