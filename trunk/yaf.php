@@ -172,7 +172,9 @@ $path . '/application/library/', $path . '/application/models',
 $path . '/application/plugins', $path . '/Public'),
 'files' => array(
 array('name' => $path . '/index.php', 
-'content' => "date_default_timezone_set('Asia/Shanghai');
+'content' => "
+<?php
+date_default_timezone_set('Asia/Shanghai');
 error_reporting(E_ALL&E_ERROR|E_WARNING);
 ini_set('apc.debug', '0');
 define('APP_PATH', \$_SERVER['DOCUMENT_ROOT']);
