@@ -358,7 +358,12 @@ abstract class Afx_Module_Abstract {
 				$sql .= " WHERE ";
 				$hasWhere = 1;
 				foreach ( $this->_where as $k => $v ) {
-					$sql .= "`$v[0]`  " . $v [1] . $this->_processValue($v[2]) . " AND ";
+					if($v[1]!='in'){
+					$sql .= "`$v[0]` " . $v [1] . $this->_processValue($v[2]) . " AND ";
+					}else if($v[1]=='in'){
+					   if(count($v[2]))
+				        $sql .= "`$v[0]` ".$v[1].$this->_processIn($v[2]). " AND ";
+					}
 				}
 				$lastIndex = strrpos ( $sql, 'AND' );
 				if ($lastIndex > 0) {
@@ -372,8 +377,12 @@ abstract class Afx_Module_Abstract {
 					$sql .= ' OR ';
 				}
 				foreach ( $this->_wor as $k => &$v ) {
+					if($v[1]!='in'){
 					$sql .= "`$v[0]` " . $v [1] . $this->_processValue($v[2]) . " OR ";
-			    }
+					}else if($v[1]=='in'){
+						 if(count($v[2]))$sql .= "`$v[0]` ".$v[1].$this->_processIn($v[2]). " OR ";
+					}
+				}
 				$lastIndex = strrpos ( $sql, 'OR' );
 				if ($lastIndex > 0) {
 					$sql = substr ( $sql, 0, $lastIndex );
@@ -386,7 +395,7 @@ abstract class Afx_Module_Abstract {
 				$sql .= $this->_order;
 			}
 			if ($this->_limit) {
-				$sql .= " limit " . $this->_limit;
+				$sql .= " limit $offset," . $this->_limit;
 			}
 		}
 		$this->_where = array ();
@@ -398,7 +407,7 @@ abstract class Afx_Module_Abstract {
 		$this->_limit = 100;
 		$this->_distinct=FALSE;
 		$this->_groupBy=NULL;
-		return $this->getAdapter ()->execute ( $sql, $this->_tablename, $master );
+		return  $this->_result_array=$this->getAdapter ()->execute ( $sql, $this->_tablename, $master );
 	}
 	/**
 	 * set limit
@@ -425,7 +434,7 @@ abstract class Afx_Module_Abstract {
 	 * @return Afx_Module_Abstract
 	 */
 	public function where($key = NULL, $value = NULL, $exp = '=') {
-		static $allowExp = array ('='=>1,'>' => 1, '<' => 1, '!=' => 1, '>=' => 1, '<=' => 1, 'like' => 1, 'nlike' => 1 );
+		static $allowExp = array ('='=>1,'>' => 1,'in'=>1, '<' => 1, '!=' => 1, '>=' => 1, '<=' => 1, 'like' => 1, 'nlike' => 1 );
 		if (! $exp)
 			$exp = '=';
 		if (! isset ( $allowExp [$exp] )) {
@@ -484,6 +493,16 @@ abstract class Afx_Module_Abstract {
 		return $this->_result_array=$this->getAdapter ()->execute ( $sql, $this->_tablename, $master );
 	}
 	/**
+	 * @return array
+	 */
+	public function getListALL(){
+		$limit=$this->_limit;
+		$this->_limit=NULL;
+		$ret=$this->select();
+		$this->_limit=$limit;
+		return $ret;
+	}
+	/**
 	 * 
 	 * set offset
 	 * @param int $offset
@@ -529,9 +548,7 @@ abstract class Afx_Module_Abstract {
 	 * @return Afx_Module_Abstract
 	 */
 	public function wor($key = NULL, $value = NULL, $exp = '=') {
-		static $allowExp = array ('>' => 1, '<' => 1, '!=' => 1, '>=' => 1, '<=' => 1, 'like' => 1, 'nlike' => 1 );
-		if (! $exp)
-			$exp = '=';
+		static $allowExp = array ('>' => 1,'='=>1, 'in'=>1 ,'<' => 1, '!=' => 1, '>=' => 1, '<=' => 1, 'like' => 1, 'nlike' => 1 );
 		if (! isset ( $allowExp [$exp] )) {
 			return $this;
 		}
@@ -627,8 +644,22 @@ abstract class Afx_Module_Abstract {
 		} 
 		return $ret;
 	}
+	/**
+	 * @var array $in
+	 */
+	private function _processIn($inArr=array()){
+		$str=NULL;
+		if(count($inArr)){
+			$str="('".join("','", $inArr)."')";
+		}
+		return $str;
+	}
 	
 	public function count(){
+		$limit=$this->_limit;
+		$this->_limit=NULL;
+		$this->select();
+		$this->_limit=$limit;
 		if(is_array($this->_result_array)){
 			return count($this->_result_array);
 		}
@@ -649,17 +680,5 @@ abstract class Afx_Module_Abstract {
 	public function groupBy($key){
 		if($key)$this->_groupBy=$key;
 		return $this;
-	}
-	/**
-	 * for debug use
-	 */
-	public function p() {
-		echo '<pre>';
-		if (count ( func_get_args () )) {
-			foreach ( func_get_args () as $k => $v ) {
-				print_r ( $v );
-			}
-		}
-		echo '</pre>';
 	}
 }

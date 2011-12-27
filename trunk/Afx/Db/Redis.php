@@ -18,60 +18,164 @@ class Afx_Db_Redis {
 	const AFTER = 'after';
 	const BEFORE = 'before';
 	/**
+	 * @var array
+	 */
+	protected static $_slaves = array ();
+	
+	protected static $_slave_options = array ();
+	protected static $_slave_num = 0;
+	/**
+	 * @var Redis
+	 */
+	protected static $_master = NULL;
+	
+	protected static $_master_host;
+	
+	protected static $_master_port;
+	
+	protected static $_options = array ();
+	/**
 	 * 
 	 * @var Afx_Db_Redis
 	 */
-	protected static $_instance=NULL;
+	protected static $_instance = NULL;
+	
+	/**
+	 * @return the Redis
+	 */
+	public static function getSlave() {
+		if(self::$_slave_num>0){
+		$server_num=rand(0, self::$_slave_num)%self::$_slave_num;
+		return self::$_slaves[$server_num];
+		}
+	}
+
+	/**
+	 * @return the $_master
+	 */
+	public static function getMaster() {
+		return self::$_master;
+	}
+
+	/**
+	 * @return the $_options
+	 */
+	public static function getOptions() {
+		return self::$_options;
+	}
+	
+	/**
+	 * @param field_type $_options
+	 */
+	public static function setOptions($_options) {
+		self::$_options = $_options;
+	}
 	
 	private function __construct() {
-	  $this->_init();
+		$this->_init ();
 	}
-    private function _init(){
-    	
-    }
-	public function Instance(){
-		if(!self::$_instance){
-		   
+	private function _init() {
+		if (count ( self::$_options ) == 0 || ! isset ( self::$_options ['redis'] ) || count ( self::$_options ['redis'] ) == 0) {
+			throw new Afx_Db_Exception ( 'no redis configuration found', '404' );
 		}
+		$redis = self::$_options ['redis'];
+		$master = $redis ['master'];
+		$slave = $redis ['slave'];
+		static $keys_needs = array ('host' => 1, 'port' => 1 );
+		
+		$no_keys = array_diff_key ( $keys_needs, $master );
+		//		Afx_Debug_Helper::print_r($no_keys);
+		if (count ( $no_keys )) {
+			foreach ( $no_keys as $k => &$v ) {
+				throw new Afx_Db_Exception ( "no redis master $k configuration found", '404' );
+			}
+		}
+		if (! is_array ( $slave ) || count ( $slave ) == 0) {
+			throw new Afx_Db_Exception ( "redis slave must be an array not empty", '401' );
+		}
+		foreach ( $slave as $k => &$v ) {
+			$no_keys = array_diff_key ( $keys_needs, $v );
+			if (count ( $no_keys )) {
+				foreach ( $no_keys as $k => &$v ) {
+					throw new Afx_Db_Exception ( "no redis slave $k configuration found", '404' );
+				}
+			}
+		}
+		self::$_master_host = $master ['host'];
+		self::$_master_port = $master ['port'];
+		try {
+			self::$_master = new Redis ();
+			self::$_master->connect(self::$_master_host,self::$_master_port);
+			$i = 0;
+			foreach ( $slave as $k => $v ) {
+				self::$_slaves [$i] = new Redis ();
+				self::$_slaves [$i]->connect($v['host'],$v['port']);
+				self::$_slave_options=$v;
+				++ self::$_slave_num;
+				++ $i;
+			}
+		} catch ( Exception $e ) {
+		
+		}
+	
+	}
+	public static function Instance() {
+		if (! self::$_instance) {
+			self::$_instance = new self ();
+		}
+		return self::$_instance;
 	}
 	
 	public function connect() {
+		
 	}
 	
 	public function pconnect() {
 	}
 	
 	public function close() {
+	
 	}
 	
 	public function ping() {
+	  
 	}
 	
-	public function get() {
+	public function get($key) {
+	   return self::getSlave()->get($key);
 	}
 	
-	public function set() {
+	public function set($k,$v) {
+		return self::getMaster()->set($k,$v);
 	}
 	
-	public function setex() {
+	public function setex($k,$v) {
+		return self::getMaster()->setex($k,$v);
 	}
 	
-	public function setnx() {
+	public function setnx($k,$v) {
+		return self::getMaster()->setnx($k,$v);
 	}
 	
-	public function getSet() {
+	public function getSet($k,$v) {
+		return self::getMaster()->getSet($k,$v);
 	}
 	
 	public function randomKey() {
+		return self::getMaster()->randomKey();
 	}
 	
-	public function renameKey() {
+	public function renameKey($key,$newname) {
+		return self::getMaster()->renameKey($key,$newname);
 	}
 	
-	public function renameNx() {
+	public function renameNx($key,$newname) {
+		return self::getMaster()->renameNx($key,$newname);
 	}
 	
 	public function getMultiple() {
+		$args=func_get_args();
+		
 	}
 	
 	public function exists() {
@@ -87,36 +191,47 @@ class Afx_Db_Redis {
 	}
 	
 	public function decr() {
+	
 	}
 	
 	public function decrBy() {
+	
 	}
 	
 	public function type() {
+	
 	}
 	
 	public function append() {
+	
 	}
 	
 	public function getRange() {
+	
 	}
 	
 	public function setRange() {
+	
 	}
 	
 	public function getBit() {
+	
 	}
 	
 	public function setBit() {
+	
 	}
 	
 	public function strlen() {
+	
 	}
 	
 	public function getKeys() {
+	
 	}
 	
 	public function sort() {
+	
 	}
 	
 	public function sortAsc() {
