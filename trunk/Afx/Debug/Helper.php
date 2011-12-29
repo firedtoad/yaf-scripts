@@ -1,7 +1,7 @@
 <?php
 /**
  * Afx Framework
- * A Light Framework Provider Basic Communication With 
+ * A Light Framework Provider Basic Communication With
  * Databases Like Mysql Memcache Mongo and more
  * LICENSE
  * This source file is part of the Afx Framework
@@ -17,53 +17,60 @@
  */
 class Afx_Debug_Helper
 {
-    public static function print_r(){
-        
-       // static $colors=array('red','yellow','green');
-        $color=dechex(rand(0,255)).dechex(rand(0,255)).dechex(rand(0,255));
-       if(strlen($color)!=6){
-            $color.=str_repeat(0, 6-strlen($color));
+    public static function print_r ()
+    {
+        // static $colors=array('red','yellow','green');
+        $color = dechex(rand(0, 255)) . dechex(rand(0, 255)) .
+         dechex(rand(0, 255));
+        if (strlen($color) != 6) {
+            $color .= str_repeat(0, 6 - strlen($color));
         }
         echo "<pre style=\"background-color:#$color;\">";
-        $arr=func_get_args();
-        foreach ($arr as $k=>$v) {
+        $arr = func_get_args();
+        foreach ($arr as $k => $v) {
             print_r($v);
         }
         echo '</pre>';
     }
-    public static function var_dump(){
-        $color=dechex(rand(0,255)).dechex(rand(0,255)).dechex(rand(0,255));
-        if(strlen($color)!=6){
-            $color.=str_repeat(0, 6-strlen($color));
+    public static function var_dump ()
+    {
+        $color = dechex(rand(0, 255)) . dechex(rand(0, 255)) .
+         dechex(rand(0, 255));
+        if (strlen($color) != 6) {
+            $color .= str_repeat(0, 6 - strlen($color));
         }
         echo "<pre style=\"background-color:#$color;\">";
-        $arr=func_get_args();
-        foreach ($arr as $k=>$v) {
+        $arr = func_get_args();
+        foreach ($arr as $k => $v) {
             var_dump($v);
         }
         echo '</pre>';
     }
-    public static function export(){
-         $color=dechex(rand(0,255)).dechex(rand(0,255)).dechex(rand(0,255));
-        if(strlen($color)!=6){
-            $color.=str_repeat(0, 6-strlen($color));
+    public static function export ()
+    {
+        $color = dechex(rand(0, 255)) . dechex(rand(0, 255)) .
+         dechex(rand(0, 255));
+        if (strlen($color) != 6) {
+            $color .= str_repeat(0, 6 - strlen($color));
         }
         echo "<pre style=\"background-color:#$color;\">";
-        $arr=func_get_args();
-        foreach ($arr as $k=>$v) {
-           ReflectionClass::export($v);
+        $arr = func_get_args();
+        foreach ($arr as $k => $v) {
+            ReflectionClass::export($v);
         }
         echo '</pre>';
     }
-    public function exportExtension(){
-    	 $color=dechex(rand(0,255)).dechex(rand(0,255)).dechex(rand(0,255));
-        if(strlen($color)!=6){
-            $color.=str_repeat(0, 6-strlen($color));
+    public function exportExtension ()
+    {
+        $color = dechex(rand(0, 255)) . dechex(rand(0, 255)) .
+         dechex(rand(0, 255));
+        if (strlen($color) != 6) {
+            $color .= str_repeat(0, 6 - strlen($color));
         }
         echo "<pre style=\"background-color:#$color;\">";
-        $arr=func_get_args();
-        foreach ($arr as $k=>$v) {
-           ReflectionExtension::export($v);
+        $arr = func_get_args();
+        foreach ($arr as $k => $v) {
+            ReflectionExtension::export($v);
         }
         echo '</pre>';
     }

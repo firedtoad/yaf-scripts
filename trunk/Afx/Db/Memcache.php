@@ -1,7 +1,7 @@
 <?php
 /**
  * Afx Framework
- * A Light Framework Provider Basic Communication With 
+ * A Light Framework Provider Basic Communication With
  * Databases Like Mysql Memcache Mongo and more
  * LICENSE
  * This source file is part of the Afx Framework
@@ -23,20 +23,22 @@ class Afx_Db_Memcache
      */
     protected static $instance;
     /**
-     * @var array store the configurations 
+     * @var array store the configurations
      */
     protected static $options = array();
     /**
      * @var Memcache The slave Link
      */
-    protected static $read_cache;
+    protected static $read_cache = array();
+    protected $slave_options = array();
+    protected static $slave_num = 0;
     /**
      * @var Memcache The Master Link
      */
     protected static $write_cache;
     /**
-     * Notice! This is really protected  
-     * so this class was prevented be instance 
+     * Notice! This is really protected
+     * so this class was prevented be instance
      * by call global new Method
      */
     protected function __construct ()
@@ -54,7 +56,7 @@ class Afx_Db_Memcache
         return TRUE;
     }
     /**
-     * 
+     *
      * init The Configuration
      * same as setOptions()
      * @param array $options
@@ -72,7 +74,7 @@ class Afx_Db_Memcache
         }
     }
     /**
-     * 
+     *
      * get the Configuration
      * @return Array
      */
@@ -81,7 +83,7 @@ class Afx_Db_Memcache
         return self::$options;
     }
     /**
-     * 
+     *
      * Initialize the Read and Write Link
      * If No Memcache extension loaded Throw Afx_Db_Exception
      * @throws Afx_Db_Exception
@@ -97,7 +99,6 @@ class Afx_Db_Memcache
                 'no memcache master configuration found', '404');
             }
             $master = $arr['master'];
-            $slave = $arr['master'];
             if (isset($arr['slave'])) {
                 $slave = $arr['slave'];
             }
@@ -108,32 +109,56 @@ class Afx_Db_Memcache
                     "no memcache master $k configuration found", '404');
                 }
             }
-            $nokeys = array_diff_key($keys_wanted, $slave);
-            if (count($nokeys)) {
-                foreach ($nokeys as $k => $v) {
-                    throw new Afx_Db_Exception(
-                    "no memcache slave $k configuration found", '404');
+            if (! is_array($slave)) {
+                throw new Afx_Db_Exception("memcache slave must be an array",
+                '404');
+            }
+            foreach ($slave as $k => $v) {
+                $nokeys = array_diff_key($keys_wanted, $v);
+                if (count($nokeys)) {
+                    foreach ($nokeys as $k => $v) {
+                        throw new Afx_Db_Exception(
+                        "no memcache slave $k configuration found", '404');
+                    }
                 }
             }
             if (class_exists('Memcache')) {
-                self::$read_cache = new Memcache();
-                self::$read_cache->addServer($slave['host'], 
-                (int) $slave['port']);
-                self::$read_cache->pconnect($slave['host'], (int) $slave['port'], 
-                2);
+                //                self::$read_cache = new Memcache();
+                //                self::$read_cache->addServer($slave['host'],
+                //                (int) $slave['port']);
+                //                self::$read_cache->pconnect($slave['host'], (int) $slave['port'],
+                //                2);
+                foreach ($slave as $k => $v) {
+                    $mm = new Memcache();
+                    $mm->pconnect($v['host'], (int) $v['port']);
+                    ++ self::$slave_num;
+                    self::$read_cache[] = $mm;
+                }
                 self::$write_cache = new Memcache();
-                self::$write_cache->addServer($master['host'], 
+                self::$write_cache->addServer($master['host'],
                 (int) $master['port']);
-                self::$write_cache->pconnect($master['host'], 
+                self::$write_cache->pconnect($master['host'],
                 (int) $master['port'], 2);
             } else {
                 throw new Afx_Db_Exception(
-                "no Memcache Class Found Please check the memcache installtion", 
+                "no Memcache Class Found Please check the memcache installtion",
                 '404');
             }
         } else {
             throw new Afx_Db_Exception('no memcache configuration found', '404');
         }
+    }
+    public static function getReadCache ()
+    {
+        $server_num = rand(0, self::$slave_num) % self::$slave_num;
+        if (isset(self::$read_cache[$server_num])) {
+            return self::$read_cache[$server_num];
+        }
+    }
+    public static function getWriteCache ()
+    {
+        if (self::$write_cache)
+            return self::$write_cache;
     }
     /**
      * The Memcache add Wrapper
@@ -151,9 +176,9 @@ class Afx_Db_Memcache
         }
     }
     /**
-     * 
+     *
      * The Memcache delete Wrapper
-     * Delete  The Master 
+     * Delete  The Master
      * @param string $key
      * @param int $timeout  default=0 means no expired
      * @return Boolean
@@ -165,7 +190,7 @@ class Afx_Db_Memcache
         }
     }
     /**
-     * 
+     *
      * The Memcache get Wrapper
      * Read from the Slave
      * @param string $key
@@ -176,10 +201,10 @@ class Afx_Db_Memcache
     {
         if ($key != NULL && self::$read_cache) {
             if ($master == FALSE) {
-                return self::$read_cache->get($key);
+                return self::getReadCache()->get($key);
             } elseif ($master == TRUE) {
                 if (self::$write_cache) {
-                    return self::$write_cache->get($key);
+                    return self::getWriteCache()->get($key);
                 }
             }
         }
@@ -200,7 +225,7 @@ class Afx_Db_Memcache
         }
     }
     /**
-     * please Don't use this method 
+     * please Don't use this method
      * It will delete all the items on the master server
      * if you do really want to clean the master server uncomment this function body
      * @deprecated
@@ -208,22 +233,21 @@ class Afx_Db_Memcache
      */
     public function flush ()
     {
-               
-        if(self::$write_cache){
-         return    self::$write_cache->flush();
+        if (self::$write_cache) {
+            return self::$write_cache->flush();
         }
     }
     /**
-     * 
+     *
      * The Memcache replace Wrapper
-     * replace the master 
+     * replace the master
      * @param string $key
      * @param mixed $value
      * @param int $timeout
      * @param int $flag
      * @return Boolean
      */
-    public function replace ($key, $value, $timeout = 60, 
+    public function replace ($key, $value, $timeout = 60,
     $flag = MEMCACHE_COMPRESSED)
     {
         if (self::$write_cache) {
@@ -271,8 +295,8 @@ class Afx_Db_Memcache
             }
         }
         if (self::$read_cache && self::$write_cache)
-            return array(self::$write_cache->getStats(), 
-            self::$read_cache->getStats());
+            return array(self::$write_cache->getStats(),
+            self::getReadCache()->getStats());
     }
     /**
      * The Memcache getVersion Wrapper
@@ -281,44 +305,46 @@ class Afx_Db_Memcache
     public function getVersion ()
     {
         if (self::$read_cache && self::$write_cache) {
-            return array(self::$read_cache->getVersion(), 
+            return array(self::$read_cache->getVersion(),
             self::$write_cache->getVersion());
         }
     }
-    
-    public function getExtendsStatus($type,$id=0,$limit=1000){
-//    	echo $type,$id,$limit,"<br/>";
-    	return self::$write_cache->getExtendedStats($type,$id,$limit);
+    public function getExtendsStatus ($type, $id = 0, $limit = 1000)
+    {
+        //    	echo $type,$id,$limit,"<br/>";
+        return self::$write_cache->getExtendedStats($type, $id, $limit);
     }
-    
-    public function dump($prefix=NULL){
-    	$arr=self::$options['memcache']['master'];
-    	$key=$arr['host'].":".$arr['port'];
-        $allSlabs=$this->getExtendsStatus('slabs');
-    	$allItems=$this->getExtendsStatus('items');
-    	foreach ($allSlabs as $server=>$slabs) {
-    		foreach ($slabs as $slabId=>$slabMeta) {
-    			
-    	   		$cdump = $this->getExtendsStatus('cachedump',(int)$slabId,1000);
-                if(is_array($cdump[$key])){
-                	foreach ($cdump[$key] as $k=>$v) {
-                		if($prefix&&strncasecmp($prefix, $k,strlen($prefix))==0){
-                			 $data=$this->get($k);
-                	     	 Afx_Debug_Helper::print_r($k,$data);
-                		}else if(!$prefix){
-                			 $data=$this->get($k);
-                		     Afx_Debug_Helper::print_r($k,$data);
-                		}
-                	}
+    public function dump ($prefix = NULL)
+    {
+        $arr = self::$options['memcache']['master'];
+        $key = $arr['host'] . ":" . $arr['port'];
+        $allSlabs = $this->getExtendsStatus('slabs');
+        $allItems = $this->getExtendsStatus('items');
+        foreach ($allSlabs as $server => $slabs) {
+            foreach ($slabs as $slabId => $slabMeta) {
+                $cdump = $this->getExtendsStatus('cachedump', (int) $slabId,
+                1000);
+                if (is_array($cdump[$key])) {
+                    foreach ($cdump[$key] as $k => $v) {
+                        if ($prefix &&
+                         strncasecmp($prefix, $k, strlen($prefix)) == 0) {
+                            $data = $this->get($k);
+                            Afx_Debug_Helper::print_r(array($k => $data));
+                        } else
+                            if (! $prefix) {
+                                $data = $this->get($k);
+                                Afx_Debug_Helper::print_r(array($k => $data));
+                            }
+                    }
                 }
-    		}
-    	}
+            }
+        }
     }
     /**
      * The Memcache getMulti Wrapper
      * @param  array $arr
-     * @param Boolean $master can be true|false default false 
-     * @return array 
+     * @param Boolean $master can be true|false default false
+     * @return array
      */
     public function getMulti ($arr = array(), $master = FALSE)
     {

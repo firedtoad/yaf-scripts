@@ -1,7 +1,7 @@
 <?php
 /**
  * Afx Framework
- * A Light Framework Provider Basic Communication With 
+ * A Light Framework Provider Basic Communication With
  * Databases Like Mysql Memcache Mongo and more
  * LICENSE
  * This source file is part of the Afx Framework
@@ -15,24 +15,22 @@
  * The Helper for response
  * @author Afx team && firedtoad@gmail.com &&dietoad@gmail.com
  */
-class Afx_Response_Helper {
-   public static function makeResponse($arr,$message=NULL,$code='0000'){
-   	 $arr=array('data'=>$arr,'message'=>$message,'code'=>$code);
-   	 ob_clean();
-   	 exit(json_encode($arr));
-   }
-   private static function _responseJSON(){
-   	
-   }
-   private static function _responseXML(){
-   	
-   }
-   private static function _responseHTML(){
-   	
-   }
-   private static function _responseRaw(){
-   	
-   }
+class Afx_Response_Helper
+{
+    public static function makeResponse ($arr, $message = NULL, $code = '0000')
+    {
+        //     $data=json_encode($arr);
+        $res = array('data' => $arr, 'message' => $message,
+        'code' => $code);
+        exit(json_encode($res));
+    }
+    private static function _responseJSON ()
+    {}
+    private static function _responseXML ()
+    {}
+    private static function _responseHTML ()
+    {}
+    private static function _responseRaw ()
+    {}
 }
-
 ?>

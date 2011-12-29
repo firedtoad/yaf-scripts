@@ -1,7 +1,7 @@
 <?php
 /**
  * Afx Framework
- * A Light Framework Provider Basic Communication With 
+ * A Light Framework Provider Basic Communication With
  * Databases Like Mysql Memcache Mongo and more
  * LICENSE
  * This source file is part of the Afx Framework
@@ -31,23 +31,23 @@ class Afx_Db_Adapter
      */
     private static $dbname = NULL;
     /**
-     * 
+     *
      * @var string
      */
     private static $db_changed;
     /**
-     * store the Database Configuration 
+     * store the Database Configuration
      * @var array
      */
     private static $options = array();
     /**
-     * store the databases mapping to the tables 
+     * store the databases mapping to the tables
      * @var array
      */
     private static $mapping = array();
     /**
      * Slave numbers
-     * @var int 
+     * @var int
      */
     private static $slave_num = 0;
     /**
@@ -64,23 +64,23 @@ class Afx_Db_Adapter
     private static $instance = NULL;
     /**
      * the last execute sql
-     *@var string 
+     *@var string
      */
     private static $lastSql = NULL;
     /**
-     * last operator server  
-     * @var string 
+     * last operator server
+     * @var string
      */
     private static $lastServer = NULL;
     /**
-     * last error info 
-     * @var string 
+     * last error info
+     * @var string
      */
     private static $lastError = NULL;
     /**
      * var Boolean
      */
-    public static $debug=TRUE;
+    public static $debug = TRUE;
     /**
      * @return the $mapping
      */
@@ -143,7 +143,7 @@ class Afx_Db_Adapter
         //if no slave use the master as the slave
         $slave = isset(self::$options['db']['slave']) &&
          is_array(self::$options['db']['slave']) ? self::$options['db']['slave'] : self::$options['db']['master'];
-        static $keys = array('host' => 1, 'user' => 1, 'password' => 1, 
+        static $keys = array('host' => 1, 'user' => 1, 'password' => 1,
         'port' => 1, 'dbname' => 1, 'charset' => 1);
         $nokeys = array_diff_key($keys, $master);
         if (count($nokeys)) {
@@ -168,26 +168,29 @@ class Afx_Db_Adapter
          $master['port'] . ';dbname=' . $master['dbname'] . ';charset=' .
          $master['charset'] . ';';
         try {
-            foreach ($slave as $k=>$v){
-            ++self::$slave_num;
-           $dsn='mysql:host='.$v['host'].';port='.$v['port'].';dbname='.$v['dbname'].';charset='.$v['charset'].';';
-            self::$link_read[] = new PDO($dsn, $v['user'], $v['password'],array(PDO::ATTR_TIMEOUT => 1, PDO::ATTR_PERSISTENT => 1,
-            PDO::MYSQL_ATTR_INIT_COMMAND=>'set names utf8') );
-            }        
-            self::$link_write = new PDO(self::$write_dsn, $master['user'], 
-            $master['password'], 
-            array(PDO::ATTR_TIMEOUT => 1, PDO::ATTR_PERSISTENT => 1,PDO::MYSQL_ATTR_INIT_COMMAND=>'set names utf8'));
+            foreach ($slave as $k => $v) {
+                ++ self::$slave_num;
+                $dsn = 'mysql:host=' . $v['host'] . ';port=' . $v['port'] .
+                 ';dbname=' . $v['dbname'] . ';charset=' . $v['charset'] . ';';
+                self::$link_read[] = new PDO($dsn, $v['user'], $v['password'],
+                array(PDO::ATTR_TIMEOUT => 1, PDO::ATTR_PERSISTENT => 0,
+                PDO::MYSQL_ATTR_INIT_COMMAND => 'set names utf8'));
+            }
+            self::$link_write = new PDO(self::$write_dsn, $master['user'],
+            $master['password'],
+            array(PDO::ATTR_TIMEOUT => 1, PDO::ATTR_PERSISTENT => 0,
+            PDO::MYSQL_ATTR_INIT_COMMAND => 'set names utf8'));
         } catch (PDOException $e) {
             throw new Exception($e);
         }
     }
     /**
      * getSlave Server link
-     * @return PDO 
+     * @return PDO
      */
     public static function getSalve ()
     {
-         $server_num=rand(0, self::$slave_num)%self::$slave_num;
+        $server_num = rand(0, self::$slave_num) % self::$slave_num;
         if (self::$link_read[$server_num]) {
             return self::$link_read[$server_num];
         }
@@ -195,7 +198,7 @@ class Afx_Db_Adapter
     }
     /**
      * getMaster Server link
-     * @return PDO 
+     * @return PDO
      */
     public static function getMaster ()
     {
@@ -222,7 +225,7 @@ class Afx_Db_Adapter
         }
     }
     /**
-     * 
+     *
      * quote a string with slashs
      * @param string $str
      * @param int $style PDOPram
@@ -235,19 +238,19 @@ class Afx_Db_Adapter
     /**
      * The main method execute the sql string
      * @param string $sql the sql string
-     * @param string $table  on which table 
+     * @param string $table  on which table
      * @param  Boolean $master whether operator the master
      * @param Boolean $usetrans whether use transaction default False
-     * @throws PDOException 
+     * @throws PDOException
      * @throws Exception
      */
     public function execute ($sql, $table = NULL, $master = FALSE, $usetrans = FALSE)
     {
-        $server_num=rand(0, self::$slave_num)%self::$slave_num;
+        $server_num = rand(0, self::$slave_num) % self::$slave_num;
         self::$lastSql = $sql;
         self::$lastServer = $master;
-        if(self::$debug){
-        echo $sql, "  serverNum=$server_num\n<br/>";
+        if (self::$debug) {
+            echo $sql, "  serverNum=$server_num\n<br/>";
         }
         //we want to map the table in different database so
         //selete the default database every time
@@ -256,9 +259,8 @@ class Afx_Db_Adapter
             self::$link_write->exec("use " . self::$dbname);
             self::$db_changed = NULL;
         }
-        //check if we need mapping 
-        //Notice that it exists a bug when two database have the same table name 
-      
+        //check if we need mapping
+        //Notice that it exists a bug when two database have the same table name
         if ($table != NULL && is_string($table)) {
             if (is_array(self::$mapping) && count(self::$mapping)) {
                 foreach (self::$mapping as $k => $v) {
@@ -272,11 +274,13 @@ class Afx_Db_Adapter
             }
         }
         if (strncasecmp($sql, 'select', 6) == 0) {
-            //read from the database  
+            //read from the database
             //default operator the slave
             try {
                 if ($master == FALSE) {
-                    $statment = self::$link_read[$server_num]->prepare($sql);
+                    //                    self::$link_read[$server_num]->exec();
+                    $statment = self::$link_read[$server_num]->prepare(
+                    $sql);
                 } elseif ($master == TRUE) {
                     $statment = self::$link_write->prepare($sql);
                 }
@@ -285,54 +289,55 @@ class Afx_Db_Adapter
                     if ($statment->errorCode() != '00000') {
                         self::$lastError = $statment->errorInfo();
                         throw new PDOException(
-                        implode('', $statment->errorInfo()), 
+                        implode('', $statment->errorInfo()) . "  execute error",
                         $statment->errorCode());
                     }
                     $obj = $statment->fetchALL(PDO::FETCH_ASSOC);
                     if ($statment->errorCode() != '00000') {
                         self::$lastError = $statment->errorInfo();
                         throw new PDOException(
-                        implode('', $statment->errorInfo()), 
+                        implode('', $statment->errorInfo()), "  fetch error",
                         $statment->errorCode());
                     }
                     return $obj;
                 }
             } catch (PDOException $e) {
+                echo $e->getMessage();
                 throw new Exception($e);
             }
-        } else if(strncasecmp($sql, 'delete', 6)==0||strncasecmp($sql, 'update', 6)==0||strncasecmp($sql, 'insert', 6)==0) {
-            //delete or update  or insert
-            //operator the master
-            $ret = TRUE;
-            try {
-                if ($usetrans)
-                    self::$link_write->beginTransaction();
+        } else
+            if (strncasecmp($sql, 'delete', 6) == 0 ||
+             strncasecmp($sql, 'update', 6) == 0 ||
+             strncasecmp($sql, 'insert', 6) == 0) {
+                //delete or update  or insert
+                //operator the master
+                $ret = TRUE;
+                try {
+                    if ($usetrans)
+                        self::$link_write->beginTransaction();
                     self::$link_write->exec($sql);
-                    
-                if ($usetrans)
-                    self::$link_write->commit();
-                if (self::$link_write->errorCode() != '00000') {
-                    self::$lastError = self::$link_write->errorInfo();
-                    throw new PDOException(
-                    implode('', self::$link_write->errorInfo()), 
-                    self::$link_write->errorCode());
+                    if ($usetrans)
+                        self::$link_write->commit();
+                    if (self::$link_write->errorCode() != '00000') {
+                        self::$lastError = self::$link_write->errorInfo();
+                        throw new PDOException(
+                        implode('', self::$link_write->errorInfo()),
+                        self::$link_write->errorCode());
+                    }
+                } catch (PDOException $e) {
+                    $ret = FALSE;
+                    throw new Exception($e);
                 }
-            } catch (PDOException $e) {
-                $ret = FALSE;
-                throw new Exception($e);
-            }
-           
-            return $ret;
-        }else{
-            $stmt= self::$link_write->prepare($sql);
-            $stmt->execute();
-           if ($stmt->errorCode() != '00000') {
+                return $ret;
+            } else {
+                $stmt = self::$link_write->prepare($sql);
+                $stmt->execute();
+                if ($stmt->errorCode() != '00000') {
                     self::$lastError = $stmt->errorInfo();
-                    throw new PDOException(
-                    implode('', $stmt->errorInfo()), 
+                    throw new PDOException(implode('', $stmt->errorInfo()),
                     $stmt->errorCode());
                 }
-            return $stmt->fetchALL();
-        }
+                return $stmt->fetchALL();
+            }
     }
 }
