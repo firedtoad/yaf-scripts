@@ -14,12 +14,12 @@ path=[dir] the directory where you place the project
 c=controllername   the same as -c
 m=modelname        the same as -m
 a=actioname        the same as -a
-Examples 
+Examples
 php yaf.php path=.     create project in current folder
-php yaf.php -c=Add     create Controller Add 
-php yaf.php -m=Message create Model Message  
+php yaf.php -c=Add     create Controller Add
+php yaf.php -m=Message create Model Message
 php yaf.php -c=Add -a=Add add an action named Add to Add controller
-Notice -c and -a options must be use at the same time 
+Notice -c and -a options must be use at the same time
 H;
 }
 $options = array();
@@ -50,10 +50,10 @@ class #CLASS extends Afx_Module_Abstract
 
     /**
      * @return  #CLASS
-     */  
+     */
     public function __construct ()
     {
-       
+
     }
     /**
      * @return #CLASS
@@ -67,17 +67,18 @@ class #CLASS extends Afx_Module_Abstract
     }
 }
 ";
-function tr($str){
-	$len=strlen($str);
-	$str=strtolower($str);
-	$rs.=strtoupper($str[0]);
-	for ($i = 1; $i < $len; ++$i) {
-		$rs.=$str[$i];
-		if($str[$i]=='_'){
-			$str[$i+1]=strtoupper($str[$i+1]);
-		}
-	}
-	return $rs;
+function tr ($str)
+{
+    $len = strlen($str);
+    $str = strtolower($str);
+    $rs .= strtoupper($str[0]);
+    for ($i = 1; $i < $len; ++ $i) {
+        $rs .= $str[$i];
+        if ($str[$i] == '_') {
+            $str[$i + 1] = strtoupper($str[$i + 1]);
+        }
+    }
+    return $rs;
 }
 function parse_command_line ($str)
 {
@@ -98,10 +99,10 @@ if (file_exists($lock_file)) {
             exit("controller is missing");
         }
         $class = (isset($options['c']) ? $options['c'] : $options['-c']);
-        $class=tr($class);
+        $class = tr($class);
         $class_file = $cwd . "/application/controllers/" . tr($class) . ".php";
         $view_path = $cwd . "/application/views/" . $class;
-        if (file_exists(tr($class_file))) {
+        if (file_exists(($class_file))) {
             if (! empty($options['a']) || ! empty($options['-a'])) {
                 $action = (isset($options['a']) ? $options['a'] : $options['-a']);
                 $class_temp = file_get_contents($class_file);
@@ -120,6 +121,7 @@ if (file_exists($lock_file)) {
                 file_put_contents($view_file, $view_temp);
                 exit();
             }
+            exit('controller exists!' . "\n");
         }
         $class_temp = str_replace('#CLASS', $class, $template);
         $view_temp = str_replace('#CLASS', $class, $view_temp);
@@ -139,19 +141,18 @@ if (file_exists($lock_file)) {
         if (empty($options['m']) && empty($options['-m'])) {
             exit("module is missing");
         }
-       $class = (isset($options['m']) ? $options['m'] : $options['-m']);
+        $class = (isset($options['m']) ? $options['m'] : $options['-m']);
         $class_temp = str_replace('#TABLE', ($class), $m_temp);
-       $class=str_replace('_', '', tr($class));
-       $class_file = $cwd . "/application/models/" . ($class) . ".php";
-       if (file_exists($class_file)) {
+        $class = str_replace('_', '', tr($class));
+        $class_file = $cwd . "/application/models/" . ($class) . ".php";
+        if (file_exists($class_file)) {
             exit("File exists\n");
         }
         $class_temp = str_replace('#CLASS', $class, $class_temp);
         echo "class file=$class_file\nclass template=$class_temp";
         echo "write class file\n";
-    
         file_put_contents($class_file, $class_temp);
-        exit("done\n"); 
+        exit("done\n");
     }
     exit(usage());
 }
@@ -163,15 +164,15 @@ if (! file_exists($path)) {
 }
 $path = realpath($path);
 $lock_file = $path . "/.yaf_lock";
-$conf = array('path' => './', 
-'paths' => array($path . '/conf', $path . '/application', 
-$path . '/application/controllers', $path . '/application/views', 
-$path . '/application/views/index', $path . '/application/views/error', 
-$path . '/application/modules', $path . '/application/library', 
-$path . '/application/library/', $path . '/application/models', 
+$conf = array('path' => './',
+'paths' => array($path . '/conf', $path . '/application',
+$path . '/application/controllers', $path . '/application/views',
+$path . '/application/views/index', $path . '/application/views/error',
+$path . '/application/modules', $path . '/application/library',
+$path . '/application/library/', $path . '/application/models',
 $path . '/application/plugins', $path . '/Public'),
 'files' => array(
-array('name' => $path . '/index.php', 
+array('name' => $path . '/index.php',
 'content' => "
 <?php
 date_default_timezone_set('Asia/Shanghai');
@@ -183,13 +184,13 @@ if (file_exists(APP_PATH . '/conf/auto.php')) {
      spl_autoload_register('__autoload');
 }
 \$app = new Yaf_Application(APP_PATH . '/conf/application.ini', 'production');
-\$app->bootstrap()->run();"), 
-array('name' => $path . '/.htaccess', 
+\$app->bootstrap()->run();"),
+array('name' => $path . '/.htaccess',
 'content' => 'RewriteEngine On
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^/Public/(.*\.(js|ico|gif|jpg|png|css|bmp|html|wsdl|pdf|xls)$) /Public/$1 [L]
-RewriteRule ^/.* /index.php [L]'), 
-array('name' => $path . '/conf/application.ini', 
+RewriteRule ^/.* /index.php [L]'),
+array('name' => $path . '/conf/application.ini',
 'content' => '[production]
 application.directory=APP_PATH "/application"
 application.dispatcher.catchException=TRUE
@@ -199,8 +200,8 @@ smarty.cache_dir=APP_PATH "/application/views/cache"
 smarty.compile_dir=APP_PATH "/application/views/cache"
 smarty.cache=FALSE
 smarty.debug=FALSE
-'), 
-array('name' => $path . '/conf/auto.php', 
+'),
+array('name' => $path . '/conf/auto.php',
 'content' => '<?php
 $root = $_SERVER["DOCUMENT_ROOT"] . "/application";
 $load_paths = "$root/models;$root/modules;$root/plugins;$root/library";
@@ -225,8 +226,8 @@ function __autoload ($class_name)
     if (file_exists($class_name . "php")) {
         require_once $class_name . "php";
     }
-}'), 
-array('name' => $path . '/conf/conf.php', 
+}'),
+array('name' => $path . '/conf/conf.php',
 'content' => "<?php
 <?php
 return array(
@@ -254,57 +255,97 @@ return array(
 			    array('host'=>'127.0.0.1','port'=>'27017','db'=>'pstore','collection'=>'pstore')
                 )
            )
-);"), 
-array('name' => $path . '/application/Bootstrap.php', 
+);"),
+array('name' => $path . '/application/Bootstrap.php',
 'content' => "<?php
-class Bootstrap extends Yaf_Bootstrap_Abstract {
-	public function _initDb(Yaf_Dispatcher \$dispatcher) {
-		if (file_exists ( \"conf/conf.php\" )) {
-			\$conf = include_once \"conf/conf.php\";
-			Afx_Db_Adapter::initOption ( \$conf );
-			Afx_Db_Mongo::setOptions(\$conf);
-			Afx_Module_Abstract::setAdapter ( Afx_Db_Adapter::Instance () );
-			Afx_Db_Memcache::initOption (\$conf );
-			Afx_Db_Adapter::\$debug=FALSE;
-		}
-		if (file_exists ( 'conf/mapping.php' )) {
-			\$mapping = include 'conf/mapping.php';
-			Afx_Db_Adapter::setMapping ( \$mapping );
-		}
-	}
-	public function _initModel(Yaf_Dispatcher \$dispatcher) {
-		ob_start ();
-	}
-	public function _initSession(Yaf_Dispatcher \$dispatcher) {
+class Bootstrap extends Yaf_Bootstrap_Abstract
+{
+    public function _initDb (Yaf_Dispatcher \$dispatcher)
+    {
+        if (file_exists('conf/conf.php')) {
+            \$conf = include_once 'conf/conf.php';
+            Afx_Db_Adapter::initOption(\$conf);
+            Afx_Db_Mongo::setOptions(\$conf);
+            Yaf_Registry::set('conf', \$conf);
+            //			Afx_Db_Redis::setOptions(\$conf);
+            //			\$rd=Afx_Db_Redis::Instance();
+            //			\$rd->get('hi');
+            Afx_Module_Abstract::setAdapter(
+            Afx_Db_Adapter::Instance());
+            Afx_Db_Memcache::initOption(\$conf);
+            Afx_Db_Adapter::\$debug = FALSE;
+        }
+        if (file_exists('conf/mapping.php')) {
+            \$mapping = include 'conf/mapping.php';
+            Afx_Db_Adapter::setMapping(\$mapping);
+        }
+    }
+    public function _initModel (Yaf_Dispatcher \$dispatcher)
+    {
+        ob_start();
+    }
+    public function _initSession (Yaf_Dispatcher \$dispatcher)
+    {
+        //		ini_set('session.save_handler', 'files');
+        //ini_set('session.save_path', '3;600;/tmp');
         session_start();
-		header ( 'content-type:text/html;charset=utf-8' );
-	}
-	public function _initSmarty(Yaf_Dispatcher \$dispatcher) {
-		//        \$conf = Yaf_Application::app()->getConfig()->get('smarty');
-		//        Yaf_Registry::set('config', Yaf_Application::app()->getConfig());
-		//        \$con = Yaf_Registry::get('smarty');
-		//        \$smart_adapter = new Afx_Smarty_Adapter(NULL, 
-		//        array('cache' => \$conf->get('compile_dir'), 
-		//        'compile_dir' => \$conf->get('compile_dir'), 
-		//        'template_dir' => \$conf->get('template_dir'), 
-		//        'cache_dir' => \$conf->get('cache_dir'),
-		//        'debug' => \$conf->get('debug'),
-		//        ));
-		\$dispatcher->disableView ();
-		//      \$dispatcher->setView(\$smart_adapter);
-	}
-
+        header('content-type:text/html;charset=utf-8');
+    }
+    public function _initConfig (Yaf_Dispatcher \$dispatcher)
+    {
+        //		\$dispatcher->getRequest();
+    }
+    public function _initCli (Yaf_Dispatcher \$dispatcher)
+    {
+        \$req = \$dispatcher->getRequest();
+        if (\$req->isCli()) {
+            global \$argc, \$argv;
+            if (\$argc >= 2) {
+                \$urls = explode('/', \$argv[1]);
+                \$req->setControllerName(\$urls[0]);
+                \$req->setActionName(\$urls[1]);
+                \$dispatcher->disableView();
+                \$dispatcher->dispatch(\$req);
+            }
+        }
+    }
+    public function _initSmarty (Yaf_Dispatcher \$dispatcher)
+    {
+        //\$conf = Yaf_Application::app()->getConfig()->get('smarty');
+        // Afx_Debug_Helper::print_r(\$conf);
+        //        Yaf_Registry::set('config', Yaf_Application::app()->getConfig());
+        //        \$con = Yaf_Registry::get('smarty');
+        //        \$smart_adapter = new Afx_Smarty_Adapter(NULL,
+        //        array('cache' => \$conf->get('compile_dir'),
+        //        'compile_dir' => \$conf->get('compile_dir'),
+        //        'template_dir' => \$conf->get('template_dir'),
+        //        'cache_dir' => \$conf->get('cache_dir'),
+        //        'debug' => \$conf->get('debug'),
+        //        ));
+        \$dispatcher->disableView();
+         //       \$dispatcher->setView(\$smart_adapter);
+    }
+    public function _initConf (Yaf_Dispatcher \$dispatcher)
+    {
+    }
+    public function _initCas (Yaf_Dispatcher \$dispatcher)
+    {
+        //		require 'application/library/CAS.php';
+    //		phpCAS::setCASSession_start ( true );
+    //		phpCAS::handleLogoutRequests ( false );
+    //		phpCAS::setCASSession_start ( false );
+    }
 }
- "), 
-array('name' => $path . '/application/controllers/Index.php', 
+"),
+array('name' => $path . '/application/controllers/Index.php',
 'content' => '<?php
 class IndexController extends Yaf_Controller_abstract {
    public function indexAction() {
    	 echo "Hi from yaf";
    }
 }
- '), 
-array('name' => $path . '/application/controllers/Error.php', 
+ '),
+array('name' => $path . '/application/controllers/Error.php',
 'content' => '<?php
 class ErrorController extends Yaf_Controller_Abstract
 {
@@ -319,8 +360,8 @@ class ErrorController extends Yaf_Controller_Abstract
   }
     }
 }
- '), 
-array('name' => $path . '/application/views/index/index.phtml', 
+ '),
+array('name' => $path . '/application/views/index/index.phtml',
 'content' => '<html>
  <head>
    <title>Hello World</title>
@@ -328,8 +369,8 @@ array('name' => $path . '/application/views/index/index.phtml',
  <body>
     Hellow World!
  </body>
-</html>'), 
-array('name' => $path . '/application/views/error/index.phtml', 
+</html>'),
+array('name' => $path . '/application/views/error/index.phtml',
 'content' => '
   error occured
  ')));
@@ -362,7 +403,7 @@ if (file_exists('Afx')) {
         echo 'Linux copy Lib', "\n";
         `mv -f Afx $path/application/library/`;
     } else {
-         echo 'Windows copy Lib', "\n";
-         echo `move /Y Afx $path/application/library`;
+        echo 'Windows copy Lib', "\n";
+        echo `move /Y Afx $path/application/library`;
     }
 }
