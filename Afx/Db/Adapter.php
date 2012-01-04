@@ -82,6 +82,14 @@ class Afx_Db_Adapter
      */
     public static $debug = TRUE;
     /**
+     * @return the $lastSql
+     */
+    public static function getLastSql ()
+    {
+        return Afx_Db_Adapter::$lastSql;
+    }
+
+	/**
      * @return the $mapping
      */
     public static function getMapping ()
@@ -247,7 +255,9 @@ class Afx_Db_Adapter
     public function execute ($sql, $table = NULL, $master = FALSE, $usetrans = FALSE)
     {
         $server_num = rand(0, self::$slave_num) % self::$slave_num;
-        self::$lastSql = $sql;
+        if(strncasecmp($sql, 'EXPLAIN', 7)!=0){
+             self::$lastSql = $sql;
+        }
         self::$lastServer = $master;
         if (self::$debug) {
             echo $sql, "  serverNum=$server_num\n<br/>";
@@ -265,6 +275,7 @@ class Afx_Db_Adapter
             if (is_array(self::$mapping) && count(self::$mapping)) {
                 foreach (self::$mapping as $k => $v) {
                     if (isset($v[$table])) {
+//                     echo   $sql=str_ireplace($table, $k.".".$table, $sql);
                         self::$link_read[$server_num]->exec("use $k");
                         self::$link_write->exec("use $k");
                         self::$db_changed = 'changed';

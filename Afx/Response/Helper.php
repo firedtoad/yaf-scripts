@@ -19,9 +19,9 @@ class Afx_Response_Helper
 {
     public static function makeResponse ($arr, $message = NULL, $code = '0000')
     {
-        //     $data=json_encode($arr);
         $res = array('data' => $arr, 'message' => $message,
         'code' => $code);
+//        ob_clean();
         exit(json_encode($res));
     }
     private static function _responseJSON ()
