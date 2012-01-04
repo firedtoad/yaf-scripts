@@ -274,9 +274,45 @@ abstract class Afx_Module_Abstract
                     }
                     //',' more add again drop it
                     $sql = substr($sql, 0, strlen($sql) - 1);
+                    $hasWhere = 0;
+                    if ($this->_where && count($this->_where)) {
+                        $sql .= " WHERE ";
+                        $hasWhere = 1;
+                        foreach ($this->_where as $k => $v) {
+                            if (isset($v[0]) && isset($v[1])) {
+                                $sql .= "`{$v[0]}`{$v[1]}" .
+                                 $this->_processValue($v[2]) . " AND ";
+                            }
+                        }
+                        $lastPost = strrpos($sql, "AND");
+                        if ($lastPost) {
+                            $sql = substr($sql, 0, $lastPost);
+                        }
+                    }
+                    if ($this->_wor && count(count($this->_wor))) {
+                        if (! $hasWhere) {
+                            $sql .= " WHERE ";
+                        }
+                        foreach ($this->_wor as $k=>$v) {
+                           if (isset($v[0]) && isset($v[1])) {
+                                $sql .= "`{$v[0]}`{$v[1]}" .
+                                 $this->_processValue($v[2]) . " OR ";
+                            }
+                        }
+                        $lastPost = strrpos($sql, "OR");
+                        if ($lastPost) {
+                            $sql = substr($sql, 0, $lastPost);
+                        }
+                    }
                     if (isset($arr_old[$this->_key])) {
-                        $sql .= sprintf(' where `%s`=%s', $this->_key,
-                        $this->_processValue($arr_old[$this->_key]));
+                        if(!$hasWhere){
+                          $sql.=" WHERE ";
+                        }else{
+                           $sql.=" AND ";
+                        }
+                        $sql.="`$this->_key`=".$this->_processValue($arr_old[$this->_key]).'limit 1';
+//                        $sql .= sprintf(' where `%s`=%s', $this->_key,
+//                        $this->_processValue($arr_old[$this->_key]));
                         return $this->getAdapter()->execute($sql,
                         $this->_tablename);
                     } else {
@@ -311,17 +347,66 @@ abstract class Afx_Module_Abstract
      * @param  Boolean $master whether operator the master
      * @return Afx_Module_Abstract if success else NULL
      */
-    public function getOne ($id, $master = FALSE)
+    public function getOne ($id = NULL, $master = FALSE)
     {
-        if (! is_numeric($id)) {
+        if ($id && ! is_numeric($id)) {
             return NULL;
         }
         $sql = '';
         if (! $this->_random) {
             $sql = sprintf(
             'SELECT * FROM ' . $this->_tablename . ' WHERE `id`=%d', $id);
-        } else {}
+        } else {
+            $sql = sprintf(
+            'SELECT * FROM ' . $this->_tablename . ' ORDER BY RAND() limit 1');
+        }
         $arr = $this->getAdapter()->execute($sql, $this->_tablename, $master);
+        if ($arr && is_array($arr[0])) {
+            $this->_obj = self::fromArray($arr[0]);
+            $this->setProperties($arr[0]);
+            return $this;
+        }
+        return NULL;
+    }
+    /**
+     * get an Object from the database by random use where and or condition
+     * @param Boolean $master whether from the master
+     * @return Afx_Module_Abstract
+     */
+    public function getRandom ($master = FALSE)
+    {
+        $sql = 'SELECT * FROM ' . $this->_tablename;
+        // process where
+        $hasWhere = 0;
+        if ($this->_where && count($this->_where)) {
+            $sql .= ' WHERE ';
+            $hasWhere = 1;
+            foreach ($this->_where as $k => $v) {
+                if ($v[0] && $v[1])
+                    $sql .= " `$v[0]`$v[1]" . $this->_processValue($v[2]) .
+                     " AND ";
+            }
+            $lastPos = strripos($sql, 'AND');
+            if ($lastPos) {
+                $sql = substr($sql, 0, $lastPos);
+            }
+        }
+        if ($this->_wor && count($this->_wor)) {
+            if (! $hasWhere)
+                $sql .= ' WHERE ';
+            foreach ($this->_wor as $k => $v) {
+                if ($v[0] && $v[1] && $v[2])
+                    $sql .= " `$v[0]`$v[1]" . $this->_processValue($v[2]) .
+                     " OR ";
+            }
+            $lastPos = strripos($sql, 'OR');
+            if ($lastPos) {
+                $sql = substr($sql, 0, $lastPos);
+            }
+        }
+        $sql .= " ORDER BY RAND() limit 1";
+        $arr = $this->getAdapter()->execute($sql, $this->_tablename, FALSE,
+        FALSE);
         if ($arr && is_array($arr[0])) {
             $this->_obj = self::fromArray($arr[0]);
             $this->setProperties($arr[0]);
@@ -352,6 +437,92 @@ abstract class Afx_Module_Abstract
         return NULL;
     }
     /**
+     * generate the sql string use the conditions
+     * @return string
+     */
+    private function _generateSql ()
+    {
+        $sql = 'SELECT ';
+        if ($this->_distinct) {
+            $sql .= 'DISTINCT ';
+        }
+        $hasWhere = 0;
+        if (! $this->_sql) {
+            if (! is_array($this->_field) || count($this->_field) == 0) {
+                $sql .= "*";
+            } elseif (count($this->_field)) {
+                foreach ($this->_field as $k => $v) {
+                    $sql .= '`' . $v . "`,";
+                }
+            }
+            $lastIndex = strrpos($sql, ',');
+            if ($lastIndex > 0) {
+                $sql = substr($sql, 0, $lastIndex);
+            }
+            $sql .= " FROM " . $this->_tablename;
+            if (is_array($this->_join) && count($this->_join) > 0) {
+                foreach ($this->_join as $k => $v) {
+                    $sql .= " JOIN " . $v[0] . " ON " . $this->_tablename . "." .
+                     $v[1] . "=" . $v[0] . "." . $v[2];
+                }
+            }
+            if (is_array($this->_where) && count($this->_where) > 0) {
+                $sql .= " WHERE ";
+                $hasWhere = 1;
+                foreach ($this->_where as $k => $v) {
+                    if ($v[1] != 'in') {
+                        $sql .= "`$v[0]` " . $v[1] . $this->_processValue($v[2]) .
+                         " AND ";
+                    } else
+                        if ($v[1] == 'in') {
+                            if (count($v[2]))
+                                $sql .= "`$v[0]` " . $v[1] .
+                                 $this->_processIn($v[2]) . " AND ";
+                        }
+                }
+                $lastIndex = strrpos($sql, 'AND');
+                if ($lastIndex > 0) {
+                    $sql = substr($sql, 0, $lastIndex);
+                }
+            }
+            if (is_array($this->_wor) && count($this->_wor) > 0) {
+                if (! $hasWhere) {
+                    $sql .= ' WHERE ';
+                } else {
+                    $sql .= ' OR ';
+                }
+                foreach ($this->_wor as $k => &$v) {
+                    if ($v[1] != 'in') {
+                        $sql .= "`$v[0]` " . $v[1] . $this->_processValue($v[2]) .
+                         " OR ";
+                    } else
+                        if ($v[1] == 'in') {
+                            if (count($v[2]))
+                                $sql .= "`$v[0]` " . $v[1] .
+                                 $this->_processIn($v[2]) . " OR ";
+                        }
+                }
+                $lastIndex = strrpos($sql, 'OR');
+                if ($lastIndex > 0) {
+                    $sql = substr($sql, 0, $lastIndex);
+                }
+            }
+            if ($this->_groupBy) {
+                $sql .= ' GROUP BY `' . $this->_groupBy . '` ';
+            }
+            if ($this->_order && ! $this->_random) {
+                $sql .= $this->_order;
+            } else
+                if ($this->_random) {
+                    $sql .= " ORDER BY RAND()";
+                }
+            if ($this->_limit) {
+                $sql .= " limit " . $this->_offset . "," . $this->_limit;
+            }
+        }
+        return $sql;
+    }
+    /**
      * select the result from database use conditions
      * @param int $limit
      * @param int $offset
@@ -380,7 +551,7 @@ abstract class Afx_Module_Abstract
             $sql .= " FROM " . $this->_tablename;
             if (is_array($this->_join) && count($this->_join) > 0) {
                 foreach ($this->_join as $k => $v) {
-                    $sql .= " JOIN " . $v[0] . " ON " . $this->_tablename . "." .
+                    $sql .= " $v[3] JOIN " . $v[0] . " ON " . $this->_tablename . "." .
                      $v[1] . "=" . $v[0] . "." . $v[2];
                 }
             }
@@ -569,7 +740,6 @@ abstract class Afx_Module_Abstract
         return $this;
     }
     /**
-     *
      * set like condition
      * @param string $key
      * @param mixed $value
@@ -590,10 +760,10 @@ abstract class Afx_Module_Abstract
      * @param string $rkey the right join key
      * @return Afx_Module_Abstract
      */
-    public function join ($table, $lkey, $rkey)
+    public function join ($table, $lkey, $rkey,$type="LEFT")
     {
         if ($table)
-            $this->_join[] = array($table, $lkey, $rkey);
+            $this->_join[] = array($table, $lkey, $rkey,$type);
         return $this;
     }
     /**
@@ -615,6 +785,11 @@ abstract class Afx_Module_Abstract
             $this->_wor[] = array($key, $exp, $value);
         return $this;
     }
+    /**
+     * @param array $arr the array to insert can be one or two demision
+     * @param Boolean $master whether operator the master
+     * @param Boolean $usetrans whether use transection
+     */
     public function insert ($arr = array(), $master = FALSE, $usetrans = FALSE)
     {
         if (is_array($arr) && count($arr) > 0) {
@@ -674,6 +849,12 @@ abstract class Afx_Module_Abstract
             }
         }
     }
+    public function expain ()
+    {
+        $sql = "EXPLAIN " . $this->getAdapter()->getLastSql();
+        $explain = $this->getAdapter()->execute($sql, $this->_tablename, TRUE);
+        Afx_Debug_Helper::print_r($explain);
+    }
     /**
      * pass the value ;
      * @param mixed $v
@@ -704,13 +885,16 @@ abstract class Afx_Module_Abstract
         return $ret;
     }
     /**
-     * @var array $in
+     * @var mixed array or sql string $in
      */
-    private function _processIn ($inArr = array())
+    private function _processIn ($inArr)
     {
         $str = NULL;
         if (count($inArr)) {
             $str = "('" . join("','", $inArr) . "')";
+        }
+        if (is_string($inArr) && strncasecmp($inArr, 'select', '6')) {
+            $str = "( $inArr )";
         }
         return $str;
     }

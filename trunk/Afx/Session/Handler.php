@@ -1,7 +1,7 @@
 <?php
 /**
  * Afx Framework
- * A Light Framework Provider Basic Communication With 
+ * A Light Framework Provider Basic Communication With
  * Databases Like Mysql Memcache Mongo and more
  * LICENSE
  * This source file is part of the Afx Framework

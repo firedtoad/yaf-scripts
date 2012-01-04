@@ -52,6 +52,7 @@ class Afx_Request_Helper
     {
         $request = new CAS_CurlRequest();
         $request->setUrl($url);
+         $request->setCurlOptions(array(CURLOPT_TIMEOUT=>1));
         $request->send();
         return json_decode($request->getResponseBody(), TRUE);
     }
@@ -59,10 +60,12 @@ class Afx_Request_Helper
     {
         $request = new CAS_CurlRequest();
         $request->setUrl($url);
+        $request->setCurlOptions(array(CURLOPT_TIMEOUT=>1));
         $request->makePost();
         if (! isset($post['code']) || empty($post['code'])) {
             $post['code'] = md5(http_build_query($post));
         }
+//        Afx_Debug_Helper::print_r(http_build_query($post));
         $request->setPostBody(http_build_query($post));
         $request->send();
         return json_decode($request->getResponseBody(), TRUE);

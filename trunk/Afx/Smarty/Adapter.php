@@ -1,7 +1,7 @@
 <?php
 /**
  * Afx Framework
- * A Light Framework Provider Basic Communication With 
+ * A Light Framework Provider Basic Communication With
  * Databases Like Mysql Memcache Mongo and more
  * LICENSE
  * This source file is part of the Afx Framework
@@ -12,7 +12,7 @@
 /**
  * @package Afx_Smarty
  * @version $Id Adapter.php
- * The Smarty View Adapter implements the Yaf_View_Interface 
+ * The Smarty View Adapter implements the Yaf_View_Interface
  * @author Afx team && firedtoad@gmail.com &&dietoad@gmail.com
  */
 class Afx_Smarty_Adapter implements Yaf_View_Interface
@@ -51,7 +51,7 @@ class Afx_Smarty_Adapter implements Yaf_View_Interface
         }
     }
     /**
-     * 
+     *
      * @param string $key
      * @param mixed $value
      */
@@ -82,7 +82,7 @@ class Afx_Smarty_Adapter implements Yaf_View_Interface
         return $this->_smarty->display($tpl);
     }
     /**
-     * set the view path Notice we don't use the yaf default view path 
+     * set the view path Notice we don't use the yaf default view path
      * we do nothing here
      * @param string $template_dir
      */
