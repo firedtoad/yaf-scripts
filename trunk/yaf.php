@@ -26,7 +26,7 @@ $options = array();
 $template = '<?php
 class #CLASSController extends Yaf_Controller_abstract {
    public function indexAction() {
-   	 echo "Hi from #CLASS action";
+       echo "Hi from #CLASS action";
    }
 }
 ';
@@ -53,7 +53,6 @@ class #CLASS extends Afx_Module_Abstract
      */
     public function __construct ()
     {
-
     }
     /**
      * @return #CLASS
@@ -235,10 +234,10 @@ return array(
   'type'=>'mysql',
   'master'=>array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'root','dbname'=>'bgopendb','charset'=>'utf8'),
   'slave'=>array(
-				array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'root','dbname'=>'bgstore','charset'=>'utf8'),
-				array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'root','dbname'=>'bgstore','charset'=>'utf8'),
-				array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'root','dbname'=>'bgstore','charset'=>'utf8'),
-				array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'root','dbname'=>'bgstore','charset'=>'utf8')
+                array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'root','dbname'=>'bgstore','charset'=>'utf8'),
+                array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'root','dbname'=>'bgstore','charset'=>'utf8'),
+                array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'root','dbname'=>'bgstore','charset'=>'utf8'),
+                array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'root','dbname'=>'bgstore','charset'=>'utf8')
                ),
             ),
   'memcache'=>array(
@@ -250,9 +249,9 @@ return array(
    'type'=>'mongo',
    'master'=>array('host'=>'127.0.0.1','port'=>'27017','db'=>'pstore','collection'=>'pstore'),
    'slave'=>array(
-			    array('host'=>'127.0.0.1','port'=>'27017','db'=>'pstore','collection'=>'pstore'),
-			    array('host'=>'127.0.0.1','port'=>'27017','db'=>'pstore','collection'=>'pstore'),
-			    array('host'=>'127.0.0.1','port'=>'27017','db'=>'pstore','collection'=>'pstore')
+                array('host'=>'127.0.0.1','port'=>'27017','db'=>'pstore','collection'=>'pstore'),
+                array('host'=>'127.0.0.1','port'=>'27017','db'=>'pstore','collection'=>'pstore'),
+                array('host'=>'127.0.0.1','port'=>'27017','db'=>'pstore','collection'=>'pstore')
                 )
            )
 );"),
@@ -267,9 +266,9 @@ class Bootstrap extends Yaf_Bootstrap_Abstract
             Afx_Db_Adapter::initOption(\$conf);
             Afx_Db_Mongo::setOptions(\$conf);
             Yaf_Registry::set('conf', \$conf);
-            //			Afx_Db_Redis::setOptions(\$conf);
-            //			\$rd=Afx_Db_Redis::Instance();
-            //			\$rd->get('hi');
+          //Afx_Db_Redis::setOptions(\$conf);
+          //\$rd=Afx_Db_Redis::Instance();
+          //\$rd->get('hi');
             Afx_Module_Abstract::setAdapter(
             Afx_Db_Adapter::Instance());
             Afx_Db_Memcache::initOption(\$conf);
@@ -286,14 +285,14 @@ class Bootstrap extends Yaf_Bootstrap_Abstract
     }
     public function _initSession (Yaf_Dispatcher \$dispatcher)
     {
-        //		ini_set('session.save_handler', 'files');
+        //ini_set('session.save_handler', 'files');
         //ini_set('session.save_path', '3;600;/tmp');
         session_start();
         header('content-type:text/html;charset=utf-8');
     }
     public function _initConfig (Yaf_Dispatcher \$dispatcher)
     {
-        //		\$dispatcher->getRequest();
+        //\$dispatcher->getRequest();
     }
     public function _initCli (Yaf_Dispatcher \$dispatcher)
     {
@@ -313,27 +312,27 @@ class Bootstrap extends Yaf_Bootstrap_Abstract
     {
         //\$conf = Yaf_Application::app()->getConfig()->get('smarty');
         // Afx_Debug_Helper::print_r(\$conf);
-        //        Yaf_Registry::set('config', Yaf_Application::app()->getConfig());
-        //        \$con = Yaf_Registry::get('smarty');
-        //        \$smart_adapter = new Afx_Smarty_Adapter(NULL,
-        //        array('cache' => \$conf->get('compile_dir'),
-        //        'compile_dir' => \$conf->get('compile_dir'),
-        //        'template_dir' => \$conf->get('template_dir'),
-        //        'cache_dir' => \$conf->get('cache_dir'),
-        //        'debug' => \$conf->get('debug'),
-        //        ));
+        // Yaf_Registry::set('config', Yaf_Application::app()->getConfig());
+        // \$con = Yaf_Registry::get('smarty');
+        // \$smart_adapter = new Afx_Smarty_Adapter(NULL,
+        // array('cache' => \$conf->get('compile_dir'),
+        // 'compile_dir' => \$conf->get('compile_dir'),
+        // 'template_dir' => \$conf->get('template_dir'),
+        // 'cache_dir' => \$conf->get('cache_dir'),
+        // 'debug' => \$conf->get('debug'),
+        // ));
         \$dispatcher->disableView();
-         //       \$dispatcher->setView(\$smart_adapter);
+         //\$dispatcher->setView(\$smart_adapter);
     }
     public function _initConf (Yaf_Dispatcher \$dispatcher)
     {
     }
     public function _initCas (Yaf_Dispatcher \$dispatcher)
     {
-        //		require 'application/library/CAS.php';
-    //		phpCAS::setCASSession_start ( true );
-    //		phpCAS::handleLogoutRequests ( false );
-    //		phpCAS::setCASSession_start ( false );
+    //      require 'application/library/CAS.php';
+    //      phpCAS::setCASSession_start ( true );
+    //      phpCAS::handleLogoutRequests ( false );
+    //      phpCAS::setCASSession_start ( false );
     }
 }
 "),
@@ -341,7 +340,7 @@ array('name' => $path . '/application/controllers/Index.php',
 'content' => '<?php
 class IndexController extends Yaf_Controller_abstract {
    public function indexAction() {
-   	 echo "Hi from yaf";
+     echo "Hi from yaf";
    }
 }
  '),
