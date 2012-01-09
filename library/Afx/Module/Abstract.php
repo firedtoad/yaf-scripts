@@ -114,8 +114,7 @@ abstract class Afx_Module_Abstract
      * @param stdClass $_obj
      */
     public function setObj ($_obj)
-    {
-        if(is_object($_obj))
+    {  if(is_array($_obj))
         $this->_obj = $_obj;
     }
     /**
