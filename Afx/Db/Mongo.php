@@ -15,6 +15,11 @@
  * The Mongo Class wrapper mongo class
  * @author Afx team && firedtoad@gmail.com &&dietoad@gmail.com
  */
+/**
+ *  Afx mongo封装
+ * @author firedtoad
+ *
+ */
 class Afx_Db_Mongo
 {
     protected static $slavenum = 0;

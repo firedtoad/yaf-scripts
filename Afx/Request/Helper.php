@@ -15,6 +15,11 @@
  * The Helper for Request
  * @author Afx team && firedtoad@gmail.com &&dietoad@gmail.com
  */
+/**
+ * Afx 请求帮助类
+ * 封装了curl
+ * @author firedtoad
+ */
 class Afx_Request_Helper
 {
     /**
@@ -48,6 +53,10 @@ class Afx_Request_Helper
         }
         return self::$_instance;
     }
+    /**
+     * get 访问
+     * @param string $url
+     */
     private static function _get ($url)
     {
         $request = new CAS_CurlRequest();
@@ -56,6 +65,11 @@ class Afx_Request_Helper
         $request->send();
         return json_decode($request->getResponseBody(), TRUE);
     }
+    /**
+     * post访问
+     * @param array $url
+     * @param array $post
+     */
     private static function _post ($url, array &$post = array())
     {
         $request = new CAS_CurlRequest();
@@ -65,11 +79,17 @@ class Afx_Request_Helper
         if (! isset($post['code']) || empty($post['code'])) {
             $post['code'] = md5(http_build_query($post));
         }
+
 //        Afx_Debug_Helper::print_r(http_build_query($post));
         $request->setPostBody(http_build_query($post));
         $request->send();
         return json_decode($request->getResponseBody(), TRUE);
     }
+    /**
+     * 服务方法
+     * @param array $arr
+     * @param array $post
+     */
     public static function service ($arr, array $post = array())
     {
         if (count($arr) <= 0)
