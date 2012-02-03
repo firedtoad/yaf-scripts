@@ -15,6 +15,10 @@
  * The Pdo Class Adapter Provider Communication With The RelationShip Database
  * @author Afx team && firedtoad@gmail.com &&dietoad@gmail.com
  */
+/**
+ *
+ * @author firedtoad
+ */
 class Afx_Db_Adapter
 {
     /**
@@ -27,61 +31,73 @@ class Afx_Db_Adapter
     private static $link_write = NULL;
     /**
      * store the default dbname
+     * 保存默认连接的数据库名
      * @var string
      */
     private static $dbname = NULL;
     /**
-     *
+     * 标识数据库是否切换过
      * @var string
      */
     private static $db_changed;
     /**
+     * 保存数据库配置
      * store the Database Configuration
      * @var array
      */
     private static $options = array();
     /**
+     * 保存数据库表映射
      * store the databases mapping to the tables
      * @var array
      */
     private static $mapping = array();
     /**
+     * 从数据库服务器数
      * Slave numbers
      * @var int
      */
     private static $slave_num = 0;
     /**
+     * 读数据库连接
      * @var string
      */
     private static $read_dsn = array();
     /**
+     * 写数据库连接
      * @var string
      */
     private static $write_dsn = NULL;
     /**
+     * 保存单例
      * @var Afx_Db_Adapter
      */
     private static $instance = NULL;
     /**
+     * 最后一次执行的sql语句
      * the last execute sql
      *@var string
      */
     private static $lastSql = NULL;
     /**
+     * 最后一次操作的数据库
      * last operator server
      * @var string
      */
     private static $lastServer = NULL;
     /**
+     * 最后一次错误信息
      * last error info
      * @var string
      */
     private static $lastError = NULL;
     /**
+     * 是否开发模式
      * var Boolean
      */
     public static $debug = TRUE;
     /**
+     * 获取最后一条sql
      * @return the $lastSql
      */
     public static function getLastSql ()
@@ -90,6 +106,7 @@ class Afx_Db_Adapter
     }
 
 	/**
+	 * 获取数据库表映射
      * @return the $mapping
      */
     public static function getMapping ()
@@ -97,6 +114,7 @@ class Afx_Db_Adapter
         return self::$mapping;
     }
     /**
+     * 设置数据库表映射
      * @param array $mapping
      */
     public static function setMapping ($mapping)
@@ -104,6 +122,7 @@ class Afx_Db_Adapter
         self::$mapping = $mapping;
     }
     /**
+     * 初始化数据库配置
      * Initialize The Configuration
      * @param array $arr
      */
@@ -113,6 +132,7 @@ class Afx_Db_Adapter
         return TRUE;
     }
     /**
+     * 获取数据库配置
      * Get the Configuration
      * @return array
      */
@@ -121,6 +141,7 @@ class Afx_Db_Adapter
         return self::$options;
     }
     /**
+     * 单例
      * @return Afx_Db_Adapter
      */
     public static function Instance ()
@@ -131,6 +152,7 @@ class Afx_Db_Adapter
         return self::$instance;
     }
     /**
+     * 初始化PDO连接 注意不要使用持久连接 不然切库会有问题
      * Initialize The PDO connections
      * @throws Afx_Db_Exception
      * @throws Exception
@@ -193,6 +215,7 @@ class Afx_Db_Adapter
         }
     }
     /**
+     * 随机获取从数据库连接
      * getSlave Server link
      * @return PDO
      */
@@ -205,6 +228,7 @@ class Afx_Db_Adapter
         return NULL;
     }
     /**
+     * 获取主数据库连接
      * getMaster Server link
      * @return PDO
      */
@@ -216,6 +240,7 @@ class Afx_Db_Adapter
         return NULL;
     }
     /**
+     * 单例私有构造函数
      * The construction we do initialize the database connections
      */
     private function __construct ()
@@ -223,6 +248,7 @@ class Afx_Db_Adapter
         $this->_initConnection();
     }
     /**
+     * 重新初始化数据库连接
      * ReInitialize Database Connections
      */
     public static function reInitConnection ()
@@ -233,7 +259,7 @@ class Afx_Db_Adapter
         }
     }
     /**
-     *
+     * 过滤非法字符
      * quote a string with slashs
      * @param string $str
      * @param int $style PDOPram
@@ -244,6 +270,7 @@ class Afx_Db_Adapter
             return self::$link_write->quote($str, $style);
     }
     /**
+     * 适配器主方法 执行sql 语句 切库  报错 记录 日志
      * The main method execute the sql string
      * @param string $sql the sql string
      * @param string $table  on which table
@@ -255,15 +282,18 @@ class Afx_Db_Adapter
     public function execute ($sql, $table = NULL, $master = FALSE, $usetrans = FALSE)
     {
         $server_num = rand(0, self::$slave_num) % self::$slave_num;
+
         if(strncasecmp($sql, 'EXPLAIN', 7)!=0){
              self::$lastSql = $sql;
         }
         self::$lastServer = $master;
         if (self::$debug) {
+            Afx_Logger::log($sql."  serverNum=$server_num");
             echo $sql, "  serverNum=$server_num\n<br/>";
         }
         //we want to map the table in different database so
         //selete the default database every time
+        // 已经切过库 切回来
         if (self::$db_changed != NULL) {
             self::$link_read[$server_num]->exec("use " . self::$dbname);
             self::$link_write->exec("use " . self::$dbname);
@@ -271,6 +301,7 @@ class Afx_Db_Adapter
         }
         //check if we need mapping
         //Notice that it exists a bug when two database have the same table name
+        // 切库 小心两个库有同样的表名 会出现问题
         if ($table != NULL && is_string($table)) {
             if (is_array(self::$mapping) && count(self::$mapping)) {
                 foreach (self::$mapping as $k => $v) {
@@ -284,15 +315,18 @@ class Afx_Db_Adapter
                 }
             }
         }
+        //查询语句
         if (strncasecmp($sql, 'select', 6) == 0) {
             //read from the database
             //default operator the slave
             try {
+                //读主库
                 if ($master == FALSE) {
                     //                    self::$link_read[$server_num]->exec();
                     $statment = self::$link_read[$server_num]->prepare(
                     $sql);
                 } elseif ($master == TRUE) {
+                    //读从库
                     $statment = self::$link_write->prepare($sql);
                 }
                 if ($statment instanceof PDOStatement) {
@@ -306,6 +340,7 @@ class Afx_Db_Adapter
                     $obj = $statment->fetchALL(PDO::FETCH_ASSOC);
                     if ($statment->errorCode() != '00000') {
                         self::$lastError = $statment->errorInfo();
+                        //执行出错抛出异常
                         throw new PDOException(
                         implode('', $statment->errorInfo()), "  fetch error",
                         $statment->errorCode());
@@ -320,10 +355,12 @@ class Afx_Db_Adapter
             if (strncasecmp($sql, 'delete', 6) == 0 ||
              strncasecmp($sql, 'update', 6) == 0 ||
              strncasecmp($sql, 'insert', 6) == 0) {
+                 //删除更新插入操作
                 //delete or update  or insert
                 //operator the master
                 $ret = TRUE;
                 try {
+                   //使用事务
                     if ($usetrans)
                         self::$link_write->beginTransaction();
                     self::$link_write->exec($sql);
@@ -341,6 +378,7 @@ class Afx_Db_Adapter
                 }
                 return $ret;
             } else {
+                //其他情况
                 $stmt = self::$link_write->prepare($sql);
                 $stmt->execute();
                 if ($stmt->errorCode() != '00000') {

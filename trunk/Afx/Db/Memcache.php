@@ -16,27 +16,37 @@
  * @author Afx team && firedtoad@gmail.com &&dietoad@gmail.com
  *
  */
+/**
+ * Afx memcache缓存封装
+ * @author firedtoad
+ *
+ */
 class Afx_Db_Memcache
 {
     /**
+     * 单例保存自己
      * @var Afx_Db_Memcache
      */
     protected static $instance;
     /**
+     * 保存缓存服务器配置
      * @var array store the configurations
      */
     protected static $options = array();
     /**
+     * 读缓存服务器连接
      * @var Memcache The slave Link
      */
     protected static $read_cache = array();
     protected $slave_options = array();
     protected static $slave_num = 0;
     /**
+     * 写缓存服务器连接
      * @var Memcache The Master Link
      */
     protected static $write_cache;
     /**
+     * 单例保护构造函数
      * Notice! This is really protected
      * so this class was prevented be instance
      * by call global new Method
@@ -46,6 +56,7 @@ class Afx_Db_Memcache
         $this->_initConnection();
     }
     /**
+     * 设置数据配置
      * set the configuration
      * @param array $options
      * @return Boolean
@@ -56,7 +67,7 @@ class Afx_Db_Memcache
         return TRUE;
     }
     /**
-     *
+     * 初始化数据库配置
      * init The Configuration
      * same as setOptions()
      * @param array $options
@@ -67,6 +78,10 @@ class Afx_Db_Memcache
         self::$options = $options;
         return TRUE;
     }
+    /**
+     * 重新初始化数据库连接
+     * reinit database connections
+     */
     public static function reInitConnection ()
     {
         if (self::$instance) {
@@ -74,7 +89,7 @@ class Afx_Db_Memcache
         }
     }
     /**
-     *
+     * 获取配置
      * get the Configuration
      * @return Array
      */
@@ -83,7 +98,7 @@ class Afx_Db_Memcache
         return self::$options;
     }
     /**
-     *
+     * 初始化数据库连接 如果没有memcache 扩展直接报错
      * Initialize the Read and Write Link
      * If No Memcache extension loaded Throw Afx_Db_Exception
      * @throws Afx_Db_Exception
@@ -148,6 +163,10 @@ class Afx_Db_Memcache
             throw new Afx_Db_Exception('no memcache configuration found', '404');
         }
     }
+    /**
+     * 随机获取读连接
+     * random get read link
+     */
     public static function getReadCache ()
     {
         $server_num = rand(0, self::$slave_num) % self::$slave_num;
@@ -155,12 +174,17 @@ class Afx_Db_Memcache
             return self::$read_cache[$server_num];
         }
     }
+    /**
+     * 获取写连接
+     * get write link
+     */
     public static function getWriteCache ()
     {
         if (self::$write_cache)
             return self::$write_cache;
     }
     /**
+     * add 封装
      * The Memcache add Wrapper
      * Write To The Master
      * @param string $key
@@ -176,7 +200,7 @@ class Afx_Db_Memcache
         }
     }
     /**
-     *
+     * delete 封装
      * The Memcache delete Wrapper
      * Delete  The Master
      * @param string $key
@@ -190,7 +214,7 @@ class Afx_Db_Memcache
         }
     }
     /**
-     *
+     * get 封装
      * The Memcache get Wrapper
      * Read from the Slave
      * @param string $key
@@ -210,6 +234,7 @@ class Afx_Db_Memcache
         }
     }
     /**
+     * set 封装
      * The Memcache set Wrapper
      * Write To The Master
      * @param string $key
@@ -225,6 +250,7 @@ class Afx_Db_Memcache
         }
     }
     /**
+     * 清除所有缓存
      * please Don't use this method
      * It will delete all the items on the master server
      * if you do really want to clean the master server uncomment this function body
@@ -238,7 +264,7 @@ class Afx_Db_Memcache
         }
     }
     /**
-     *
+     * replace 封装
      * The Memcache replace Wrapper
      * replace the master
      * @param string $key
@@ -255,6 +281,7 @@ class Afx_Db_Memcache
         }
     }
     /**
+     * increment 封装
      * The Memcache increment Wrapper
      * @param string $key
      * @param int $value
@@ -267,6 +294,7 @@ class Afx_Db_Memcache
         }
     }
     /**
+     * decrement封装
      * The Memcache decrement Wrapper
      * @param string $key
      * @param int $value
@@ -279,6 +307,7 @@ class Afx_Db_Memcache
         }
     }
     /**
+     * 获取状态封装
      * The Memcache getStatus Wrapper
      * @param string $which can be master or slave or null means all
      * @return array
@@ -299,6 +328,7 @@ class Afx_Db_Memcache
             self::getReadCache()->getStats());
     }
     /**
+     * 获取版本封装
      * The Memcache getVersion Wrapper
      * @return array
      */
@@ -309,11 +339,22 @@ class Afx_Db_Memcache
             self::$write_cache->getVersion());
         }
     }
+    /**
+     * 获取附加状态
+     * @param string $type
+     * @param mixed $id
+     * @param int $limit
+     */
     public function getExtendsStatus ($type, $id = 0, $limit = 1000)
     {
         //    	echo $type,$id,$limit,"<br/>";
         return self::$write_cache->getExtendedStats($type, $id, $limit);
     }
+    /**
+     * dump 某个前缀的所有键
+     * dump the specific prefix keys
+     * @param mixed $prefix
+     */
     public function dump ($prefix = NULL)
     {
         $arr = self::$options['memcache']['master'];
@@ -341,6 +382,7 @@ class Afx_Db_Memcache
         }
     }
     /**
+     * getMulti 封装
      * The Memcache getMulti Wrapper
      * @param  array $arr
      * @param Boolean $master can be true|false default false
@@ -358,6 +400,7 @@ class Afx_Db_Memcache
         return NULL;
     }
     /**
+     * setMulti封装
      * The Memcache setMulti Wrapper
      * @param array $arr
      * @param int $timeout
@@ -375,6 +418,7 @@ class Afx_Db_Memcache
         return FALSE;
     }
     /**
+     * 单例方法
      * Get the Instance
      * @return Afx_Db_Memcache
      */

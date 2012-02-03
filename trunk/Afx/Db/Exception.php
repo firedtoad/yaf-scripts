@@ -15,6 +15,11 @@
  * The Pdo Class Adapter Provider Communication With The RelationShip Database
  * @author Afx team && firedtoad@gmail.com &&dietoad@gmail.com
  */
+/**
+ * Afx 异常类
+ * @author firedtoad
+ *
+ */
 class Afx_Db_Exception extends Exception
 {
 }

@@ -15,8 +15,19 @@
  * The Helper for response
  * @author Afx team && firedtoad@gmail.com &&dietoad@gmail.com
  */
+/**
+ * Axf响应帮助类
+ * @author firedtoad
+ */
+
 class Afx_Response_Helper
 {
+    /**
+     * 直接产生json输出
+     * @param array $arr
+     * @param string $message
+     * @param string $code
+     */
     public static function makeResponse ($arr, $message = NULL, $code = '0000')
     {
         $res = array('data' => $arr, 'message' => $message,

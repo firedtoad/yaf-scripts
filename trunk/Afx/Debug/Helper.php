@@ -15,8 +15,17 @@
  * The Pdo Class Adapter Provider Communication With The RelationShip Database
  * @author Afx team && firedtoad@gmail.com &&dietoad@gmail.com
  */
+/**
+ * Afx 调试帮助类
+ * @author firedtoad
+ *
+ */
 class Afx_Debug_Helper
 {
+    /**
+     * print_r 封装 在原有输出前后加上pre标签并变色
+     * print_r Wrapper the raw output with html label pre
+     */
     public static function print_r ()
     {
         // static $colors=array('red','yellow','green');
@@ -32,6 +41,10 @@ class Afx_Debug_Helper
         }
         echo '</pre>';
     }
+    /**
+     * var_dump 封装 在原有输出前后加上pre标签并变色
+     * var_dump Wrapper the raw output with html label pre
+     */
     public static function var_dump ()
     {
         $color = dechex(rand(0, 255)) . dechex(rand(0, 255)) .
@@ -46,6 +59,10 @@ class Afx_Debug_Helper
         }
         echo '</pre>';
     }
+     /**
+     * export 封装 在原有输出前后加上pre标签并变色
+     * export Wrapper the raw output with html label pre
+     */
     public static function export ()
     {
         $color = dechex(rand(0, 255)) . dechex(rand(0, 255)) .
@@ -60,6 +77,10 @@ class Afx_Debug_Helper
         }
         echo '</pre>';
     }
+     /**
+     * dump 扩展  封装 在原有输出前后加上pre标签并变色
+     * dump extension  Wrapper the raw output with html label pre
+     */
     public function exportExtension ()
     {
         $color = dechex(rand(0, 255)) . dechex(rand(0, 255)) .
