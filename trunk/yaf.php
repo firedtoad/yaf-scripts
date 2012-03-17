@@ -99,8 +99,8 @@ if (file_exists($lock_file)) {
         }
         $class = (isset($options['c']) ? $options['c'] : $options['-c']);
         $class = tr($class);
-        $class_file = $cwd . "/application/controllers/" . tr($class) . ".php";
-        $view_path = $cwd . "/application/views/" . $class;
+        $class_file = $cwd . "/application/controllers/" . strtolower(tr($class)) . ".php";
+        $view_path = $cwd . "/application/views/" . strtolower($class);
         if (file_exists(($class_file))) {
             if (! empty($options['a']) || ! empty($options['-a'])) {
                 $action = (isset($options['a']) ? $options['a'] : $options['-a']);
@@ -172,15 +172,24 @@ $path . '/application/library/', $path . '/application/models',
 $path . '/application/plugins', $path . '/Public'),
 'files' => array(
 array('name' => $path . '/index.php',
-'content' => "
-<?php
+'content' => "<?php//yaf 入口文件
 date_default_timezone_set('Asia/Shanghai');
-error_reporting(E_ALL&E_ERROR|E_WARNING);
-ini_set('apc.debug', '0');
-define('APP_PATH', \$_SERVER['DOCUMENT_ROOT']);
+error_reporting(-1);
+//ini_set('apc.debug', '0');
+if (PHP_SAPI == 'cli') {
+    define('APP_PATH', dirname(realpath(__FILE__)));
+} else {
+    define('APP_PATH', \$_SERVER['DOCUMENT_ROOT']);
+}
+/**
+ * yaf默认只支持application/library 目录下类的加载
+ * 并且不允许Yaf打头的第三方类出现
+ * 这里注册一个__autoload顺序加载application 下所有文件夹下的类
+ * Yaf 默认认为每个类都应该有下划线每个下划线代表一层目录
+ */
 if (file_exists(APP_PATH . '/conf/auto.php')) {
     require_once APP_PATH . '/conf/auto.php';
-     spl_autoload_register('__autoload');
+    spl_autoload_register('__autoload');
 }
 \$app = new Yaf_Application(APP_PATH . '/conf/application.ini', 'production');
 \$app->bootstrap()->run();"),
@@ -228,72 +237,175 @@ function __autoload ($class_name)
 }'),
 array('name' => $path . '/conf/conf.php',
 'content' => "<?php
-<?php
 return array(
  'db'=>array(
   'type'=>'mysql',
-  'master'=>array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'root','dbname'=>'bgopendb','charset'=>'utf8'),
+  'master'=>array('host'=>'192.168.117.129','port'=>'3306','user'=>'firedtoad','password'=>'zwhdhrdj','dbname'=>'bgpointdb','charset'=>'utf8'),
   'slave'=>array(
-                array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'root','dbname'=>'bgstore','charset'=>'utf8'),
-                array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'root','dbname'=>'bgstore','charset'=>'utf8'),
-                array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'root','dbname'=>'bgstore','charset'=>'utf8'),
-                array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'root','dbname'=>'bgstore','charset'=>'utf8')
+                array('host'=>'192.168.117.129','port'=>'3306','user'=>'firedtoad','password'=>'zwhdhrdj','dbname'=>'bgpointdb','charset'=>'utf8'),
+                array('host'=>'192.168.117.129','port'=>'3306','user'=>'firedtoad','password'=>'zwhdhrdj','dbname'=>'bgpointdb','charset'=>'utf8'),
+                array('host'=>'192.168.117.129','port'=>'3306','user'=>'firedtoad','password'=>'zwhdhrdj','dbname'=>'bgpointdb','charset'=>'utf8'),
+                array('host'=>'192.168.117.129','port'=>'3306','user'=>'firedtoad','password'=>'zwhdhrdj','dbname'=>'bgpointdb','charset'=>'utf8')
                ),
-            ),
+        ),
+/* 'db'=>array(
+  'type'=>'mysql',
+  'master'=>array('host'=>'10.100.200.22','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8'),
+  'slave'=>array(
+                array('host'=>'10.100.200.22','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8'),
+                array('host'=>'10.100.200.22','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8'),
+                array('host'=>'10.100.200.22','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8'),
+                array('host'=>'10.100.200.22','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8')
+               ),
+        ),*/
+/* 'db'=>array(
+  'type'=>'mysql',
+  'master'=>array('host'=>'192.168.188.130','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8'),
+  'slave'=>array(
+                array('host'=>'192.168.188.130','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8'),
+                array('host'=>'192.168.188.130','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8'),
+                array('host'=>'192.168.188.130','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8'),
+                array('host'=>'192.168.188.130','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8')
+               ),
+        ),*/
+/* 'db'=>array(
+  'type'=>'mysql',
+  'master'=>array('host'=>'192.168.188.130','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8'),
+  'slave'=>array(
+                array('host'=>'192.168.188.130','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8'),
+                array('host'=>'192.168.188.130','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8'),
+                array('host'=>'192.168.188.130','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8'),
+                array('host'=>'192.168.188.130','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8')
+               ),
+            ),*/
   'memcache'=>array(
     'type'=>'memcache',
-    'master'=>array('host'=>'192.168.149.43','port'=>'11211'),
-    'slave'=>array('host'=>'192.168.149.43','port'=>'11211')
+    'master'=>array('host'=>'192.168.117.129','port'=>'11211'),
+    'slave'=>array(
+            array('host'=>'192.168.117.129','port'=>'11211'),
+            array('host'=>'192.168.117.129','port'=>'11211'),
+            array('host'=>'192.168.117.129','port'=>'11211'),
+            )
   ),
+/*  'memcache'=>array(
+    'type'=>'memcache',
+    'master'=>array('host'=>'192.168.149.43','port'=>'11211'),
+    'slave'=>array(
+            array('host'=>'192.168.149.43','port'=>'11211'),
+            array('host'=>'192.168.149.43','port'=>'11211'),
+            array('host'=>'192.168.149.43','port'=>'11211'),
+            )
+  ),*/
   'mongo'=>array(
    'type'=>'mongo',
    'master'=>array('host'=>'127.0.0.1','port'=>'27017','db'=>'pstore','collection'=>'pstore'),
    'slave'=>array(
                 array('host'=>'127.0.0.1','port'=>'27017','db'=>'pstore','collection'=>'pstore'),
                 array('host'=>'127.0.0.1','port'=>'27017','db'=>'pstore','collection'=>'pstore'),
-                array('host'=>'127.0.0.1','port'=>'27017','db'=>'pstore','collection'=>'pstore')
+                array('host'=>'127.0.0.1','port'=>'27017','db'=>'pstore','collection'=>'pstore'),
                 )
-           )
+           ),
+   'redis'=>array(
+   'type'=>'redis',
+   'master'=>array('host'=>'127.0.0.1','port'=>'27017'),
+   'slave'=>array(
+          array('host'=>'127.0.0.1','port'=>'6379'),
+          array('host'=>'127.0.0.1','port'=>'6379'),
+          array('host'=>'127.0.0.1','port'=>'6379'),
+                )
+           ),
+   'service'=>'https://www.test.com/CASServer/custom/api/',
+   'casServer'=>'www.test.com',
+   'casUrl'=>'CASServer',
+   'casLoginUrl'=>'https://www.test.com/CASServer/login?service=http://inner.pstore.com/Index/Index/Login',
+   'casLogoutUrl'=>'https://www.test.com/CASServer/logout?service=http://inner.pstore.com/Index/Index/Logout',
+/*   'casLoginUrl'=>'https://www.test.com/CASServer/login?service=http://pstore/Index/Index/Login',
+   'casLogoutUrl'=>'https://www.test.com/CASServer/logout?service=http://pstore/Index/Index/',*/
+   'api'=>array(
+             'getUserInfo'=>array('http://10.100.200.12/CASManager/custom/api/getUserInfo.do','post'),
+             'getPointsByUid'=>array('http://10.100.200.12/CASManager/custom/api/getPointsByUid.do','post'),
+//             'customerUsePoints'=>array('http://192.168.127.79:8080/CASManager/custom/api/customerUsePoints.do','post'),
+             't'=>array('http://pstore/Index/Store/t','post'),
+             'customerUsePoints'=>array('http://10.100.200.12/CASManager/custom/api/customerUsePoints.do','post'),
+//             'customerUsePoints'=>'http://192.168.188.114/CASManager/custom/api/customerUsePoints.do',
+           ),
 );"),
 array('name' => $path . '/application/Bootstrap.php',
 'content' => "<?php
+/**
+ *
+ * 框架初始化类
+ * @author firedtoad
+ *
+ */
 class Bootstrap extends Yaf_Bootstrap_Abstract
 {
+     /**
+     * 初始化会话
+     * @param Yaf_Dispatcher \$dispatcher
+     */
+    public function _initSession (Yaf_Dispatcher \$dispatcher)
+    {
+        ini_set('session.save_handler', 'memcache');
+        ini_set('session.save_path', \"tcp://192.168.117.129:11211\");
+        session_start();
+        header('content-type:text/html;charset=utf-8');
+    }
+    public function _initMemory(Yaf_Dispatcher \$dispatcher){
+       //   ini_set('memory_limit', '2M');
+//        echo  ini_get('memory_limit');
+    }
+    /**
+     * 初始化文件日志
+     * @param Yaf_Dispatcher \$dispatcher
+     */
+    public function _initLog (Yaf_Dispatcher \$dispatcher)
+    {
+        Afx_Logger::\$_logpath = APP_PATH . '/log';
+    }
+    /**
+     * 初始化数据库链接 mysql mongo memcache
+     * @param Yaf_Dispatcher \$dispatcher
+     */
     public function _initDb (Yaf_Dispatcher \$dispatcher)
     {
-        if (file_exists('conf/conf.php')) {
-            \$conf = include_once 'conf/conf.php';
-            Afx_Db_Adapter::initOption(\$conf);
-            Afx_Db_Mongo::setOptions(\$conf);
-            Yaf_Registry::set('conf', \$conf);
-          //Afx_Db_Redis::setOptions(\$conf);
-          //\$rd=Afx_Db_Redis::Instance();
-          //\$rd->get('hi');
-            Afx_Module_Abstract::setAdapter(
-            Afx_Db_Adapter::Instance());
-            Afx_Db_Memcache::initOption(\$conf);
-            Afx_Db_Adapter::\$debug = FALSE;
+        if (file_exists(APP_PATH . '/conf/conf.php')) {
+            \$conf = include_once APP_PATH . '/conf/conf.php';
+            try {
+                Yaf_Registry::set('conf', \$conf);
+                Afx_Db_Adapter::initOption(\$conf);
+                Afx_Db_Mongo::setOptions(\$conf);
+                Yaf_Registry::set('conf', \$conf);
+                Afx_Module_Abstract::setAdapter(
+                Afx_Db_Adapter::Instance());
+                Afx_Db_Memcache::initOption(\$conf);
+                Afx_Db_Adapter::\$debug = FALSE;
+            } catch (Exception \$e) {
+                Afx_Debug_Helper::print_r(\$e->getMessage());
+                exit();
+            }
         }
-        if (file_exists('conf/mapping.php')) {
-            \$mapping = include 'conf/mapping.php';
+        if (file_exists(APP_PATH . '/conf/mapping.php')) {
+            \$mapping = include APP_PATH . '/conf/mapping.php';
             Afx_Db_Adapter::setMapping(\$mapping);
         }
     }
+    /**
+     * 初始化模型层
+     * @param Yaf_Dispatcher \$dispatcher
+     */
     public function _initModel (Yaf_Dispatcher \$dispatcher)
     {
         ob_start();
     }
-    public function _initSession (Yaf_Dispatcher \$dispatcher)
-    {
-        //ini_set('session.save_handler', 'files');
-        //ini_set('session.save_path', '3;600;/tmp');
-        session_start();
-        header('content-type:text/html;charset=utf-8');
-    }
     public function _initConfig (Yaf_Dispatcher \$dispatcher)
     {
-        //\$dispatcher->getRequest();
+        //		\$dispatcher->getRequest();
     }
+    /**
+     * 初始化命令行方式 供守护进程使用
+     * @param Yaf_Dispatcher \$dispatcher
+     */
     public function _initCli (Yaf_Dispatcher \$dispatcher)
     {
         \$req = \$dispatcher->getRequest();
@@ -304,35 +416,69 @@ class Bootstrap extends Yaf_Bootstrap_Abstract
                 \$req->setControllerName(\$urls[0]);
                 \$req->setActionName(\$urls[1]);
                 \$dispatcher->disableView();
-                \$dispatcher->dispatch(\$req);
+                 //                \$dispatcher->dispatch(\$req);
             }
         }
     }
+     /**
+      * 初始化smarty 插件
+      * @param Yaf_Dispatcher \$dispatcher
+      */
     public function _initSmarty (Yaf_Dispatcher \$dispatcher)
     {
         //\$conf = Yaf_Application::app()->getConfig()->get('smarty');
         // Afx_Debug_Helper::print_r(\$conf);
-        // Yaf_Registry::set('config', Yaf_Application::app()->getConfig());
-        // \$con = Yaf_Registry::get('smarty');
-        // \$smart_adapter = new Afx_Smarty_Adapter(NULL,
-        // array('cache' => \$conf->get('compile_dir'),
-        // 'compile_dir' => \$conf->get('compile_dir'),
-        // 'template_dir' => \$conf->get('template_dir'),
-        // 'cache_dir' => \$conf->get('cache_dir'),
-        // 'debug' => \$conf->get('debug'),
-        // ));
+        //        Yaf_Registry::set('config', Yaf_Application::app()->getConfig());
+        //        \$con = Yaf_Registry::get('smarty');
+        //        \$smart_adapter = new Afx_Smarty_Adapter(NULL,
+        //        array('cache' => \$conf->get('compile_dir'),
+        //        'compile_dir' => \$conf->get('compile_dir'),
+        //        'template_dir' => \$conf->get('template_dir'),
+        //        'cache_dir' => \$conf->get('cache_dir'),
+        //        'debug' => \$conf->get('debug'),
+        //        ));
         \$dispatcher->disableView();
-         //\$dispatcher->setView(\$smart_adapter);
+         //       \$dispatcher->setView(\$smart_adapter);
     }
     public function _initConf (Yaf_Dispatcher \$dispatcher)
-    {
-    }
+    {}
+    /**
+     * 初始化CAS客户端
+     * @param Yaf_Dispatcher \$dispatcher
+     */
     public function _initCas (Yaf_Dispatcher \$dispatcher)
     {
-    //      require 'application/library/CAS.php';
-    //      phpCAS::setCASSession_start ( true );
-    //      phpCAS::handleLogoutRequests ( false );
-    //      phpCAS::setCASSession_start ( false );
+
+        if (file_exists(APP_PATH . '/conf/conf.php')) {
+//                Afx_Debug_Helper::print_r(\$conf);
+                  \$conf=Yaf_Registry::get('conf');
+                try {
+                    Afx_Cas_Helper::\$CASSERVER=\$conf['casServer'];
+                    Afx_Cas_Helper::\$CASURL=\$conf['casUrl'];
+                    Afx_Cas_Helper::\$CASLOGINURL=\$conf['casLoginUrl'];
+                    Afx_Cas_Helper::\$CASLOGOUTURL=\$conf['casLogoutUrl'];
+                } catch (Exception \$e) {
+                      throw new Afx_Db_Exception('Init Cas failed', 1000);
+                }
+            }
+    }
+
+    /**
+     * 初始化验证插件
+     * @param Yaf_Dispatcher \$dispatcher
+     */
+    public function _initPlugin (Yaf_Dispatcher \$dispatcher)
+    {
+        if (file_exists(APP_PATH . '/conf/forms.php') &&
+         file_exists(APP_PATH . '/conf/messages.php')) {
+            \$forms = require_once APP_PATH . '/conf/forms.php';
+            \$messages = require_once APP_PATH . '/conf/messages.php';
+            Validate::setForms(\$forms);
+            Validate::setMessages(\$messages);
+        }
+        \$form = Form::Instance();
+        \$validate = Validate::Instance();
+        \$ret = \$dispatcher->registerPlugin(\$form)->registerPlugin(\$validate);
     }
 }
 "),
@@ -369,7 +515,7 @@ array('name' => $path . '/application/views/index/index.phtml',
     Hellow World!
  </body>
 </html>'),
-array('name' => $path . '/application/views/error/index.phtml',
+array('name' => $path . '/application/views/error/error.phtml',
 'content' => '
   error occured
  ')));
@@ -392,17 +538,18 @@ if (is_array($conf['files'])) {
         if (isset($k['name'])) {
             echo 'create file  ', $k['name'] . "\n";
             $data = isset($k['content']) ? $k['content'] : '';
+             print_r($k);
             file_put_contents($k['name'], $data);
         }
     }
 }
-if (file_exists('Afx')) {
+if (file_exists('library')) {
     echo 'copy Lib', "\n";
     if (PHP_OS == 'Linux') {
         echo 'Linux copy Lib', "\n";
-        `mv -f Afx $path/application/library/`;
+        `mv -f library $path/application/`;
     } else {
         echo 'Windows copy Lib', "\n";
-        echo `move /Y Afx $path/application/library`;
+        echo `move /Y library $path/application/`;
     }
 }

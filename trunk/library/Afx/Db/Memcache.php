@@ -130,15 +130,22 @@ class Afx_Db_Memcache
                 //                2);
                 foreach ($slave as $k => $v) {
                     $mm = new Memcache();
-                    $mm->pconnect($v['host'], (int) $v['port']);
+                    $ret=@$mm->connect($v['host'], (int) $v['port'],1);
+                    if(!$ret){
+                       throw new Afx_Db_Exception('memcache was down away', '10062');
+                    }
                     ++ self::$slave_num;
                     self::$read_cache[] = $mm;
                 }
                 self::$write_cache = new Memcache();
-                self::$write_cache->addServer($master['host'],
-                (int) $master['port']);
-                self::$write_cache->pconnect($master['host'],
-                (int) $master['port'], 2);
+//                @self::$write_cache->addServer($master['host'],
+//                (int) $master['port']);
+                $ret=@self::$write_cache->connect($master['host'],
+                (int) $master['port'], 1);
+                if(!$ret){
+                   throw new Afx_Db_Exception('memcache was down away', '10062');
+                }
+
             } else {
                 throw new Afx_Db_Exception(
                 "no Memcache Class Found Please check the memcache installtion",
@@ -311,7 +318,6 @@ class Afx_Db_Memcache
     }
     public function getExtendsStatus ($type, $id = 0, $limit = 1000)
     {
-        //    	echo $type,$id,$limit,"<br/>";
         return self::$write_cache->getExtendedStats($type, $id, $limit);
     }
     public function dump ($prefix = NULL)
@@ -320,23 +326,30 @@ class Afx_Db_Memcache
         $key = $arr['host'] . ":" . $arr['port'];
         $allSlabs = $this->getExtendsStatus('slabs');
         $allItems = $this->getExtendsStatus('items');
-        foreach ($allSlabs as $server => $slabs) {
-            foreach ($slabs as $slabId => $slabMeta) {
-                $cdump = $this->getExtendsStatus('cachedump', (int) $slabId,
-                1000);
+        foreach ($allItems as $server => $slabs) {
+            foreach ($slabs as $slabId=>$slabMeta ) {
+              foreach ($slabMeta as $k=>$v) {
+              $cdump = $this->getExtendsStatus('cachedump', (int) $k,10000);
                 if (is_array($cdump[$key])) {
                     foreach ($cdump[$key] as $k => $v) {
-                        if ($prefix &&
-                         strncasecmp($prefix, $k, strlen($prefix)) == 0) {
+                        if ($prefix &&strncasecmp($prefix, $k, strlen($prefix)) == 0) {
                             $data = $this->get($k);
+                            if(is_array($data)){
+                            echo count(array_keys($data));
                             Afx_Debug_Helper::print_r(array($k => $data));
+                            }
                         } else
                             if (! $prefix) {
                                 $data = $this->get($k);
+                                if(is_array($data)){
+                                echo count(array_keys($data));
                                 Afx_Debug_Helper::print_r(array($k => $data));
+                            }
                             }
                     }
                 }
+              }
+
             }
         }
     }

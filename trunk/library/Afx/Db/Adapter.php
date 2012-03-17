@@ -20,11 +20,16 @@ class Afx_Db_Adapter
     /**
      * @var PDO
      */
-    private static $link_read = NULL;
+    private static $link_read = array();
     /**
      * @var PDO
      */
-    private static $link_write = NULL;
+    private static $link_write = array();
+    /**
+     * store the slave_count by per database connection
+     * @var array
+     */
+    private static $slave_count=array();
     /**
      * store the default dbname
      * @var string
@@ -63,10 +68,10 @@ class Afx_Db_Adapter
      */
     private static $instance = NULL;
     /**
-     * the last execute sql
-     *@var string
+     * the last execute sqls
+     *@var array
      */
-    private static $lastSql = NULL;
+    private static $lastSql = array();
     /**
      * last operator server
      * @var string
@@ -88,8 +93,7 @@ class Afx_Db_Adapter
     {
         return Afx_Db_Adapter::$lastSql;
     }
-
-	/**
+    /**
      * @return the $mapping
      */
     public static function getMapping ()
@@ -135,8 +139,10 @@ class Afx_Db_Adapter
      * @throws Afx_Db_Exception
      * @throws Exception
      */
+    static $count=0;
     private function _initConnection ()
     {
+        //echo "init ",self::$count++;
         if (count(self::$options) == 0) {
             throw new Afx_Db_Exception('no  configuration found!', 404);
         }
@@ -172,24 +178,39 @@ class Afx_Db_Adapter
             }
         }
         self::$dbname = $master['dbname'];
-        self::$write_dsn = 'mysql:host=' . $master['host'] . ';port=' .
+        self::$write_dsn[self::$dbname] = 'mysql:host=' . $master['host'] . ';port=' .
          $master['port'] . ';dbname=' . $master['dbname'] . ';charset=' .
          $master['charset'] . ';';
+         if(!isset(self::$link_read[self::$dbname])||!is_array(self::$link_read[self::$dbname]))
+         {
+           self::$link_read[self::$dbname]=array();
+         }
+         if(!isset(self::$read_dsn[self::$dbname])||!is_array(self::$read_dsn[self::$dbname]))
+         {
+           self::$read_dsn[self::$dbname]=array();
+         }
+         self::$slave_num=0;
         try {
             foreach ($slave as $k => $v) {
                 ++ self::$slave_num;
                 $dsn = 'mysql:host=' . $v['host'] . ';port=' . $v['port'] .
                  ';dbname=' . $v['dbname'] . ';charset=' . $v['charset'] . ';';
-                self::$link_read[] = new PDO($dsn, $v['user'], $v['password'],
-                array(PDO::ATTR_TIMEOUT => 1, PDO::ATTR_PERSISTENT => 0,
+                if($dsn)
+                {
+                     self::$read_dsn[self::$dbname][]=$dsn;
+                }
+                self::$link_read[self::$dbname][] = new PDO($dsn, $v['user'], $v['password'],
+                array(PDO::ATTR_TIMEOUT => '1', PDO::ATTR_PERSISTENT => 0,
                 PDO::MYSQL_ATTR_INIT_COMMAND => 'set names utf8'));
             }
-            self::$link_write = new PDO(self::$write_dsn, $master['user'],
+            self::$slave_count[self::$dbname]=self::$slave_num;
+            self::$link_write[self::$dbname] = new PDO(self::$write_dsn[self::$dbname], $master['user'],
             $master['password'],
-            array(PDO::ATTR_TIMEOUT => 1, PDO::ATTR_PERSISTENT => 0,
+            array(PDO::ATTR_TIMEOUT => '1', PDO::ATTR_PERSISTENT => 0,
             PDO::MYSQL_ATTR_INIT_COMMAND => 'set names utf8'));
         } catch (PDOException $e) {
-            throw new Exception($e);
+//            throw $e;
+            throw new Exception($e->getMessage(),'10061');
         }
     }
     /**
@@ -198,9 +219,9 @@ class Afx_Db_Adapter
      */
     public static function getSalve ()
     {
-        $server_num = rand(0, self::$slave_num) % self::$slave_num;
-        if (self::$link_read[$server_num]) {
-            return self::$link_read[$server_num];
+        $server_num = rand(0, self::$slave_count[self::$dbname]) % self::$slave_count[self::$dbname];
+        if (isset(self::$link_read[self::$dbname][$server_num])) {
+            return self::$link_read[self::$dbname][$server_num];
         }
         return NULL;
     }
@@ -210,8 +231,8 @@ class Afx_Db_Adapter
      */
     public static function getMaster ()
     {
-        if (self::$link_write) {
-            return self::$link_write;
+        if (isset(self::$link_write[self::$dbname])) {
+            return self::$link_write[self::$dbname];
         }
         return NULL;
     }
@@ -240,8 +261,12 @@ class Afx_Db_Adapter
      */
     public function quote ($str, $style = PDO::PARAM_INT)
     {
-        if ($str !== NULL)
-            return self::$link_write->quote($str, $style);
+        if ($str !== NULL&&isset(self::$link_write[self::$dbname]))
+        {   if( self::$link_write[self::$dbname] instanceof PDO )
+            {
+             return self::$link_write[self::$dbname]->quote($str, $style);
+            }
+        }
     }
     /**
      * The main method execute the sql string
@@ -255,46 +280,61 @@ class Afx_Db_Adapter
     public function execute ($sql, $table = NULL, $master = FALSE, $usetrans = FALSE)
     {
         $server_num = rand(0, self::$slave_num) % self::$slave_num;
-        if(strncasecmp($sql, 'EXPLAIN', 7)!=0){
-             self::$lastSql = $sql;
+       // Afx_Debug_Helper::print_r(self::$slave_count);
+        if (strncasecmp($sql, 'EXPLAIN', 7) != 0) {
+            self::$lastSql[] = $sql;
         }
         self::$lastServer = $master;
         if (self::$debug) {
-            echo $sql, "  serverNum=$server_num\n<br/>";
+           // echo $sql, "  serverNum=$server_num\n<br/>";
             Afx_Logger::log($sql);
         }
         //we want to map the table in different database so
         //selete the default database every time
-        if (self::$db_changed != NULL) {
-            self::$link_read[$server_num]->exec("use " . self::$dbname);
-            self::$link_write->exec("use " . self::$dbname);
-            self::$db_changed = NULL;
-        }
+//        if (self::$db_changed != NULL) {
+//            self::$link_read[$server_num]->exec("use " . self::$dbname);
+//            self::$link_write->exec("use " . self::$dbname);
+//            self::$db_changed = NULL;
+//        }
         //check if we need mapping
         //Notice that it exists a bug when two database have the same table name
         if ($table != NULL && is_string($table)) {
             if (is_array(self::$mapping) && count(self::$mapping)) {
                 foreach (self::$mapping as $k => $v) {
                     if (isset($v[$table])) {
-//                     echo   $sql=str_ireplace($table, $k.".".$table, $sql);
-                        self::$link_read[$server_num]->exec("use $k");
-                        self::$link_write->exec("use $k");
-                        self::$db_changed = 'changed';
+                        $conf=Yaf_Registry::get('conf');
+                        if(isset($conf['mappingdb'])&&isset($conf['mappingdb'][$k])){
+
+                            if(!isset(self::$link_read[$k])||!isset(self::$link_write[$k])){
+                                //echo "changed and init from ",self::$dbname,' to ',$k,"\n";
+                                $this->initOption($conf['mappingdb'][$k]);
+                               // Afx_Debug_Helper::print_r($conf['mappingdb'][$k]);
+                                $this->_initConnection($conf['mappingdb'][$k]);
+                            }else if(self::$dbname!==$k){
+                                //echo "changed dbname from ",self::$dbname,' to ',$k,"\n";
+                                self::$dbname=$k;
+                            }
+                        }
+                        //echo   $sql=str_ireplace($table, $k.".".$table, $sql);
+                        //self::$link_read[$server_num]->exec("use $k");
+                        //self::$link_write->exec("use $k");
+                       // self::$db_changed = 'changed';
                         break;
                     }
                 }
             }
         }
+       // Afx_Debug_Helper::print_r(self::$read_dsn);
         if (strncasecmp($sql, 'select', 6) == 0) {
             //read from the database
             //default operator the slave
             try {
                 if ($master == FALSE) {
                     //                    self::$link_read[$server_num]->exec();
-                    $statment = self::$link_read[$server_num]->prepare(
+                    $statment = self::$link_read[self::$dbname][$server_num]->prepare(
                     $sql);
                 } elseif ($master == TRUE) {
-                    $statment = self::$link_write->prepare($sql);
+                    $statment = self::$link_write[self::$dbname]->prepare($sql);
                 }
                 if ($statment instanceof PDOStatement) {
                     $statment->execute();
@@ -302,7 +342,8 @@ class Afx_Db_Adapter
                         self::$lastError = $statment->errorInfo();
                         throw new PDOException(
                         implode('', $statment->errorInfo()) . "  execute error",
-                        $statment->errorCode());
+                        $statment->errorCode()
+                        );
                     }
                     $obj = $statment->fetchALL(PDO::FETCH_ASSOC);
                     if ($statment->errorCode() != '00000') {
@@ -326,15 +367,15 @@ class Afx_Db_Adapter
                 $ret = TRUE;
                 try {
                     if ($usetrans)
-                        self::$link_write->beginTransaction();
-                    self::$link_write->exec($sql);
+                    self::$link_write[self::$dbname]->beginTransaction();
+                    self::$link_write[self::$dbname]->exec($sql);
                     if ($usetrans)
-                        self::$link_write->commit();
-                    if (self::$link_write->errorCode() != '00000') {
-                        self::$lastError = self::$link_write->errorInfo();
+                        self::$link_write[self::$dbname]->commit();
+                    if (self::$link_write[self::$dbname]->errorCode() != '00000') {
+                        self::$lastError = self::$link_write[self::$dbname]->errorInfo();
                         throw new PDOException(
-                        implode('', self::$link_write->errorInfo()),
-                        self::$link_write->errorCode());
+                        implode('', self::$link_write[self::$dbname]->errorInfo()),
+                        self::$link_write[self::$dbname]->errorCode());
                     }
                 } catch (PDOException $e) {
                     $ret = FALSE;
@@ -342,8 +383,7 @@ class Afx_Db_Adapter
                 }
                 return $ret;
             } else {
-                $stmt = self::$link_write->prepare($sql);
-
+                $stmt = self::$link_write[self::$dbname]->prepare($sql);
                 $stmt->execute();
                 if ($stmt->errorCode() != '00000') {
                     self::$lastError = $stmt->errorInfo();
