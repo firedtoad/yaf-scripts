@@ -35,7 +35,6 @@ class Afx_Debug_Helper
                 $consts = $ref->getConstants();
                 $prosps=$ref->getProperties();
                 $statics=$ref->getStaticProperties();
-
                 $name=$ref->getName();
                 echo 'name='.$name."\n";
                 echo 'consts={';
@@ -74,7 +73,9 @@ class Afx_Debug_Helper
                     }
                 }
                  echo "}\n";
-            } else {
+            } else if(is_array($v)){
+                print_r($v);
+            }else if(is_string($v)){
                 print_r($v);
             }
         }

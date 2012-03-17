@@ -123,7 +123,17 @@ abstract class Afx_Module_Abstract
      */
     public function getAdapter ()
     {
-        return self::$_adapter;
+        if(self::$_adapter instanceof  Afx_Db_Adapter){
+            return self::$_adapter;
+        }else{
+            throw new Afx_Db_Exception('数据库出错', '10061');
+        }
+    }
+
+    public function quote($v,$style=NULL){
+        if(self::$_adapter instanceof  Afx_Db_Adapter){
+        return self::$_adapter->quote($v,$style);
+        }
     }
     /**
      * Magic function __set
@@ -187,6 +197,9 @@ abstract class Afx_Module_Abstract
             return NULL;
         }
         foreach ($obj as $k => $v) {
+            if(strncasecmp($k, '_', 1)==0){
+              continue;
+            }
             $arr[$k] = $v;
         }
         return count($arr) ? $arr : NULL;
@@ -404,7 +417,10 @@ abstract class Afx_Module_Abstract
                 $sql = substr($sql, 0, $lastPos);
             }
         }
-        $sql .= " ORDER BY RAND() limit 1";
+        if(!$hasWhere)
+        $sql .= "WHERE id>=(SELECT FLOOR( MAX(id) * RAND()) FROM ".$this->_tablename." )  ORDER BY ".$this->_key." limit 1";
+        else
+        $sql .= "AND id>=(SELECT FLOOR( MAX(id) * RAND()) FROM ".$this->_tablename." )  ORDER BY ".$this->_key." limit 1";
         $arr = $this->getAdapter()->execute($sql, $this->_tablename, FALSE,
         FALSE);
         if ($arr && is_array($arr[0])) {
@@ -428,7 +444,9 @@ abstract class Afx_Module_Abstract
         }
         $sql = sprintf('SELECT * FROM ' . $this->_tablename . " WHERE `%s`=%s",
         $k, $this->_processValue($v));
+
         $arr = $this->getAdapter()->execute($sql, $this->_tablename, $master);
+
         if ($arr && is_array($arr[0])) {
             $this->_obj = self::fromArray($arr[0]);
             $this->setProperties($arr[0]);
@@ -520,6 +538,17 @@ abstract class Afx_Module_Abstract
                 $sql .= " limit " . $this->_offset . "," . $this->_limit;
             }
         }
+        $this->_where = array();
+        $this->_join = array();
+        $this->_on = array();
+        $this->_like = NULL;
+        $this->_field = NULL;
+        $this->_wor = array();
+        $this->_limit = 100;
+        $this->_distinct = FALSE;
+        $this->_groupBy = NULL;
+        $this->_random = NULL;
+        $this->_order = NULL;
         return $sql;
     }
     /**
@@ -652,7 +681,7 @@ abstract class Afx_Module_Abstract
     public function where ($key = NULL, $value = NULL, $exp = '=')
     {
         static $allowExp = array('=' => 1, '>' => 1, 'in' => 1, '<' => 1,
-        '!=' => 1, '>=' => 1, '<=' => 1, 'like' => 1, 'nlike' => 1);
+        '!=' => 1, '>=' => 1, '<=' => 1, 'like' => 1, 'nlike' => 1,'IS'=>1);
         if (! $exp)
             $exp = '=';
         if (! isset($allowExp[$exp])) {
@@ -777,7 +806,7 @@ abstract class Afx_Module_Abstract
     public function wor ($key = NULL, $value = NULL, $exp = '=')
     {
         static $allowExp = array('>' => 1, '=' => 1, 'in' => 1, '<' => 1,
-        '!=' => 1, '>=' => 1, '<=' => 1, 'like' => 1, 'nlike' => 1);
+        '!=' => 1, '>=' => 1, '<=' => 1, 'like' => 1, 'nlike' => 1,'IS'=>1);
         if (! isset($allowExp[$exp])) {
             return $this;
         }
@@ -865,19 +894,20 @@ abstract class Afx_Module_Abstract
         //		echo gettype($v)=='NULL',"<br/>";
         switch (strtolower(gettype($v))) {
             case 'string':
-                $ret = $this->getAdapter()->quote($v, PDO::PARAM_STR);
+                if($v==='IS'||$v==='NULL')return '  '.$v;
+                $ret = $this->quote($v, PDO::PARAM_STR);
                 break;
             case 'integer':
-                $ret = $this->getAdapter()->quote($v);
+                $ret = $this->quote($v);
                 break;
             case 'double':
-                $ret = $this->getAdapter()->quote($v);
+                $ret = $this->quote($v);
                 break;
             case 'boolean':
-                $ret = $this->getAdapter()->quote($v, PDO::PARAM_BOOL);
+                $ret = $this->quote($v, PDO::PARAM_BOOL);
                 break;
             case 'null':
-                $ret = $this->getAdapter()->quote('0', PDO::PARAM_STR);
+                $ret = $this->quote('0', PDO::PARAM_STR);
                 break;
             default:
                 break;
@@ -906,13 +936,19 @@ abstract class Afx_Module_Abstract
     {
         $limit = $this->_limit;
         $this->_limit = NULL;
-        $this->select();
+        $sql=$this->_generateSql();
+        if($sql&&stripos($sql, '*')>0){
+         $sql=str_ireplace('*', 'COUNT(*)', $sql);
+        }
         $this->_limit = $limit;
         if (is_array($this->_result_array)) {
+//              Afx_Debug_Helper::print_r(($this->_result_array));
             return count($this->_result_array);
         }
+        if(!$sql)
         $sql = sprintf('SELECT COUNT(*) FROM `%s`', $this->_tablename);
         $ret = $this->getAdapter()->execute($sql, $this->_tablename);
+
         return isset($ret['0']['COUNT(*)']) ? $ret['0']['COUNT(*)'] : 0;
     }
     /**

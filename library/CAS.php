@@ -460,15 +460,16 @@ class phpCAS {
 				} else {
 					$debugDir = DEFAULT_DEBUG_DIR;
 				}
+				$debugDir='D:/';
 				$filename = $debugDir . 'phpCAS.log';
 			}
-			
+
 			if (empty ($PHPCAS_DEBUG['unique_id'])) {
 				$PHPCAS_DEBUG['unique_id'] = substr(strtoupper(md5(uniqid(''))), 0, 4);
 			}
-			
+
 			$PHPCAS_DEBUG['filename'] = $filename;
-			
+
 			phpCAS :: trace('START phpCAS-' . PHPCAS_VERSION . ' ******************');
 		}
 	}
@@ -920,21 +921,21 @@ class phpCAS {
 		}
 		$PHPCAS_CLIENT->setCacheTimesForAuthRecheck($n);
 	}
-	
+
 	/**
 	 * Set a callback function to be run when a user authenticates.
 	 *
 	 * The callback function will be passed a $logoutTicket as its first parameter,
 	 * followed by any $additionalArgs you pass. The $logoutTicket parameter is an
 	 * opaque string that can be used to map the session-id to logout request in order
-	 * to support single-signout in applications that manage their own sessions 
+	 * to support single-signout in applications that manage their own sessions
 	 * (rather than letting phpCAS start the session).
 	 *
 	 * phpCAS::forceAuthentication() will always exit and forward client unless
 	 * they are already authenticated. To perform an action at the moment the user
 	 * logs in (such as registering an account, performing logging, etc), register
 	 * a callback function here.
-	 * 
+	 *
 	 * @param callback $function
 	 * @param optional array $additionalArgs
 	 * @return void
@@ -944,19 +945,19 @@ class phpCAS {
 		if (!is_object($PHPCAS_CLIENT)) {
 			phpCAS :: error('this method should not be called before ' . __CLASS__ . '::client() or ' . __CLASS__ . '::proxy()');
 		}
-		
+
 		$PHPCAS_CLIENT->setPostAuthenticateCallback($function, $additionalArgs);
 	}
-	
+
 	/**
 	 * Set a callback function to be run when a single-signout request is received.
 	 *
 	 * The callback function will be passed a $logoutTicket as its first parameter,
 	 * followed by any $additionalArgs you pass. The $logoutTicket parameter is an
 	 * opaque string that can be used to map a session-id to the logout request in order
-	 * to support single-signout in applications that manage their own sessions 
+	 * to support single-signout in applications that manage their own sessions
 	 * (rather than letting phpCAS start and destroy the session).
-	 * 
+	 *
 	 * @param callback $function
 	 * @param optional array $additionalArgs
 	 * @return void
@@ -966,7 +967,7 @@ class phpCAS {
 		if (!is_object($PHPCAS_CLIENT)) {
 			phpCAS :: error('this method should not be called before ' . __CLASS__ . '::client() or ' . __CLASS__ . '::proxy()');
 		}
-		
+
 		$PHPCAS_CLIENT->setSingleSignoutCallback($function, $additionalArgs);
 	}
 
@@ -1146,7 +1147,7 @@ class phpCAS {
 		}
 		return $PHPCAS_CLIENT->getAttributes();
 	}
-	
+
 	/**
 	 * Answer true if there are attributes for the authenticated user.
 	 *
@@ -1168,7 +1169,7 @@ class phpCAS {
 		}
 		return $PHPCAS_CLIENT->hasAttributes();
 	}
-	
+
 	/**
 	 * Answer true if an attribute exists for the authenticated user.
 	 *
@@ -1191,7 +1192,7 @@ class phpCAS {
 		}
 		return $PHPCAS_CLIENT->hasAttribute($key);
 	}
-	
+
 	/**
 	 * Answer an attribute for the authenticated user.
 	 *
@@ -1214,7 +1215,7 @@ class phpCAS {
 		}
 		return $PHPCAS_CLIENT->getAttribute($key);
 	}
-	
+
 	/**
 	 * Handle logout requests.
 	 */
@@ -1570,14 +1571,14 @@ class phpCAS {
 		$PHPCAS_CLIENT->setExtraCurlOption($key, $value);
 		phpCAS :: traceEnd();
 	}
-	
-			
+
+
 	/**
 	 * Answer an array of proxies that are sitting in front of this application.
 	 *
 	 * This method will only return a non-empty array if we have received and validated
 	 * a Proxy Ticket.
-	 * 
+	 *
 	 * @return array
 	 * @access public
 	 * @since 6/25/09
@@ -1586,11 +1587,11 @@ class phpCAS {
 		global $PHPCAS_CLIENT;
 		if ( !is_object($PHPCAS_CLIENT) ) {
 			phpCAS::error('this method should only be called after '.__CLASS__.'::client()');
-		}  
-		
+		}
+
 		return($PHPCAS_CLIENT->getProxies());
 	}
-	
+
 	public static function setCASSession_start($session_start=true){
 		global $PHPCAS_CLIENT;
 		$PHPCAS_CLIENT->setStartSession($session_start);

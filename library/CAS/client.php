@@ -1479,7 +1479,7 @@ class CASClient
 	{
 		phpCAS::traceBegin();
 		// build the URL to validate the ticket
-		$validate_url = $this->getServerServiceValidateURL().'&ticket='.$this->getST();
+		 $validate_url = $this->getServerServiceValidateURL().'&ticket='.$this->getST();
 		if ( $this->isProxy() ) {
 			// pass the callback url for CAS proxies
 			$validate_url .= '&pgtUrl='.urlencode($this->getCallbackURL());
@@ -2878,7 +2878,8 @@ class CASClient
 				$server_url .= $_SERVER['SERVER_PORT'];
 			}
 		}
-		return $server_url;
+
+		return  $server_url;
 	}
 
 

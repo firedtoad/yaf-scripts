@@ -17,11 +17,17 @@
  */
 class Afx_Response_Helper
 {
+     /**
+      * json输出
+      * @param array $arr
+      * @param string $message
+      * @param string $code
+      */
     public static function makeResponse ($arr, $message = NULL, $code = '0000')
     {
         $res = array('data' => $arr, 'message' => $message,
         'code' => $code);
-//        ob_clean();
+        ob_clean();
         exit(json_encode($res));
     }
     private static function _responseJSON ()
