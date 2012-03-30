@@ -15,20 +15,22 @@
  * @copyright Copyright (c) 2012 BVISON INC.  (http://www.bvison.com)
  */
 /**
- * @package Afx
- * @version $Id Module.php
- * The Module Class Impliment The Core ORM CRUD Operator
+ * @package Afx_Db
+ * @version $Id Memcache.php
+ * The Memcache Class Wrapper Provider Seperator Read And Write
  * @author Afx team && firedtoad@gmail.com &&dietoad@gmail.com
+ *
  */
-class Afx_Module extends Afx_Module_Abstract
-{
-    /**
-     * create the module object using the given table name
-     * @param string $tablename
-     * @return Afx_Module
-     */
-    public function __construct ($tablename = 'tablename')
-    {
-      $this->_tablename=$tablename;
-    }
-}
+ final class Afx_Mail_Helper{
+
+  public static function mailTo($to,$subject,$message){
+      $headers = 'From: webmaster@example.com' . "\r\n" .
+      'Reply-To: webmaster@example.com' . "\r\n" .
+      'X-Mailer: PHP/' . phpversion();
+        if(@mail($to, $subject, $message,$headers)){
+           return TRUE;
+        }else{
+            return FALSE;
+        }
+  }
+ }
