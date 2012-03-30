@@ -172,9 +172,9 @@ $path . '/application/library/', $path . '/application/models',
 $path . '/application/plugins', $path . '/Public'),
 'files' => array(
 array('name' => $path . '/index.php',
-'content' => "<?php//yaf 入口文件
+'content' => "<?php
 date_default_timezone_set('Asia/Shanghai');
-error_reporting(-1);
+//error_reporting(- 1);
 //ini_set('apc.debug', '0');
 if (PHP_SAPI == 'cli') {
     define('APP_PATH', dirname(realpath(__FILE__)));
@@ -191,8 +191,12 @@ if (file_exists(APP_PATH . '/conf/auto.php')) {
     require_once APP_PATH . '/conf/auto.php';
     spl_autoload_register('__autoload');
 }
-\$app = new Yaf_Application(APP_PATH . '/conf/application.ini', 'production');
-\$app->bootstrap()->run();"),
+try {
+    \$app = new Yaf_Application(APP_PATH . '/conf/application.ini', 'production');
+    \$app->bootstrap()->run();
+} catch (Exception \$e) {
+     header('location:/Index/Index');
+}"),
 array('name' => $path . '/.htaccess',
 'content' => 'RewriteEngine On
 RewriteCond %{REQUEST_FILENAME} !-f
@@ -211,24 +215,25 @@ smarty.debug=FALSE
 '),
 array('name' => $path . '/conf/auto.php',
 'content' => '<?php
-$root = $_SERVER["DOCUMENT_ROOT"] . "/application";
-$load_paths = "$root/models;$root/modules;$root/plugins;$root/library";
-function __autoload ($class_name)
+ function __autoload ($class_name)
 {
-//    ob_clean();
-    global $load_paths,$root;
+    $root = APP_PATH . \'/application\';
+    $load_paths = "$root/models;$root/modules;$root/plugins;$root/library;$root/controllers";
     $paths = explode(";", $load_paths);
     if (strstr($class_name, "_")) {
         $class_name = str_ireplace("_", "/", $class_name);
     }
+    if(strstr($class_name,\'Controller\'))
+    {
+         $class_name = str_ireplace("Controller", "", $class_name);
+    }
     if (is_array($paths)) {
+        $i = 0;
         foreach ($paths as $path) {
-             if($path=="$root/models"){
-                $class_name = str_ireplace("/", "_", $class_name);
-             }
+           // echo $path . "/" . $class_name . ".php";
             if (file_exists($path . "/" . $class_name . ".php")) {
                 require_once $path . "/" . $class_name . ".php";
-             }
+            }
         }
     }
     if (file_exists($class_name . "php")) {
@@ -238,73 +243,80 @@ function __autoload ($class_name)
 array('name' => $path . '/conf/conf.php',
 'content' => "<?php
 return array(
+//打开 Debug 会在数据库里打详细日志兑换
+'mode'=>'debug',
  'db'=>array(
   'type'=>'mysql',
-  'master'=>array('host'=>'192.168.117.129','port'=>'3306','user'=>'firedtoad','password'=>'zwhdhrdj','dbname'=>'bgpointdb','charset'=>'utf8'),
-  'slave'=>array(
-                array('host'=>'192.168.117.129','port'=>'3306','user'=>'firedtoad','password'=>'zwhdhrdj','dbname'=>'bgpointdb','charset'=>'utf8'),
-                array('host'=>'192.168.117.129','port'=>'3306','user'=>'firedtoad','password'=>'zwhdhrdj','dbname'=>'bgpointdb','charset'=>'utf8'),
-                array('host'=>'192.168.117.129','port'=>'3306','user'=>'firedtoad','password'=>'zwhdhrdj','dbname'=>'bgpointdb','charset'=>'utf8'),
-                array('host'=>'192.168.117.129','port'=>'3306','user'=>'firedtoad','password'=>'zwhdhrdj','dbname'=>'bgpointdb','charset'=>'utf8')
+   //主库
+  'master'=>array('host'=>'10.100.200.22','port'=>'3306','user'=>'root','password'=>'123','dbname'=>'test1','charset'=>'utf8'),
+   //从库
+	'slave'=>array(
+                array('host'=>'10.100.200.22','port'=>'3306','user'=>'root','password'=>'123','dbname'=>'test1','charset'=>'utf8'),
                ),
         ),
-/* 'db'=>array(
-  'type'=>'mysql',
-  'master'=>array('host'=>'10.100.200.22','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8'),
-  'slave'=>array(
-                array('host'=>'10.100.200.22','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8'),
-                array('host'=>'10.100.200.22','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8'),
-                array('host'=>'10.100.200.22','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8'),
-                array('host'=>'10.100.200.22','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8')
-               ),
-        ),*/
-/* 'db'=>array(
-  'type'=>'mysql',
-  'master'=>array('host'=>'192.168.188.130','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8'),
-  'slave'=>array(
-                array('host'=>'192.168.188.130','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8'),
-                array('host'=>'192.168.188.130','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8'),
-                array('host'=>'192.168.188.130','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8'),
-                array('host'=>'192.168.188.130','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8')
-               ),
-        ),*/
-/* 'db'=>array(
-  'type'=>'mysql',
-  'master'=>array('host'=>'192.168.188.130','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8'),
-  'slave'=>array(
-                array('host'=>'192.168.188.130','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8'),
-                array('host'=>'192.168.188.130','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8'),
-                array('host'=>'192.168.188.130','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8'),
-                array('host'=>'192.168.188.130','port'=>'3306','user'=>'openmall','password'=>'123','dbname'=>'bgpointdb','charset'=>'utf8')
-               ),
-            ),*/
+//切库配置
+'mappingdb'=>array(
+    //主库链接
+   'test1'=>array(
+    'db'=>array(
+    //mysql 配置
+      'type'=>'mysql',
+   //主库
+      'master'=>array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'123','dbname'=>'test1','charset'=>'utf8'),
+   //从库
+	'slave'=>array(
+                array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'123','dbname'=>'test1','charset'=>'utf8'),
+               )
+          )
+        ),
+   'test2'=>array(
+     'db'=>array(
+    //mysql 配置
+      'type'=>'mysql',
+   //主库
+      'master'=>array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'123','dbname'=>'test2','charset'=>'utf8'),
+   //从库
+	'slave'=>array(
+                array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'123','dbname'=>'test2','charset'=>'utf8'),
+               )
+             )
+        ),
+   'test3'=>array(
+    'db'=>array(
+    //mysql 配置
+      'type'=>'mysql',
+   //主库
+      'master'=>array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'123','dbname'=>'test3','charset'=>'utf8'),
+   //从库
+	'slave'=>array(
+                array('host'=>'127.0.0.1','port'=>'3306','user'=>'root','password'=>'123','dbname'=>'test3','charset'=>'utf8'),
+               )
+            )
+        ),
+
+ ),
+  //memcache 配置
   'memcache'=>array(
     'type'=>'memcache',
-    'master'=>array('host'=>'192.168.117.129','port'=>'11211'),
+        //主
+    'master'=>array('host'=>'10.100.200.46','port'=>'11211'),
+        //从
     'slave'=>array(
-            array('host'=>'192.168.117.129','port'=>'11211'),
-            array('host'=>'192.168.117.129','port'=>'11211'),
-            array('host'=>'192.168.117.129','port'=>'11211'),
+            array('host'=>'10.100.200.46','port'=>'11211'),
             )
   ),
-/*  'memcache'=>array(
-    'type'=>'memcache',
-    'master'=>array('host'=>'192.168.149.43','port'=>'11211'),
-    'slave'=>array(
-            array('host'=>'192.168.149.43','port'=>'11211'),
-            array('host'=>'192.168.149.43','port'=>'11211'),
-            array('host'=>'192.168.149.43','port'=>'11211'),
-            )
-  ),*/
   'mongo'=>array(
    'type'=>'mongo',
+     //主
    'master'=>array('host'=>'127.0.0.1','port'=>'27017','db'=>'pstore','collection'=>'pstore'),
+     //从
    'slave'=>array(
                 array('host'=>'127.0.0.1','port'=>'27017','db'=>'pstore','collection'=>'pstore'),
                 array('host'=>'127.0.0.1','port'=>'27017','db'=>'pstore','collection'=>'pstore'),
                 array('host'=>'127.0.0.1','port'=>'27017','db'=>'pstore','collection'=>'pstore'),
                 )
            ),
+    //redis 配置
    'redis'=>array(
    'type'=>'redis',
    'master'=>array('host'=>'127.0.0.1','port'=>'27017'),
@@ -313,21 +325,6 @@ return array(
           array('host'=>'127.0.0.1','port'=>'6379'),
           array('host'=>'127.0.0.1','port'=>'6379'),
                 )
-           ),
-   'service'=>'https://www.test.com/CASServer/custom/api/',
-   'casServer'=>'www.test.com',
-   'casUrl'=>'CASServer',
-   'casLoginUrl'=>'https://www.test.com/CASServer/login?service=http://inner.pstore.com/Index/Index/Login',
-   'casLogoutUrl'=>'https://www.test.com/CASServer/logout?service=http://inner.pstore.com/Index/Index/Logout',
-/*   'casLoginUrl'=>'https://www.test.com/CASServer/login?service=http://pstore/Index/Index/Login',
-   'casLogoutUrl'=>'https://www.test.com/CASServer/logout?service=http://pstore/Index/Index/',*/
-   'api'=>array(
-             'getUserInfo'=>array('http://10.100.200.12/CASManager/custom/api/getUserInfo.do','post'),
-             'getPointsByUid'=>array('http://10.100.200.12/CASManager/custom/api/getPointsByUid.do','post'),
-//             'customerUsePoints'=>array('http://192.168.127.79:8080/CASManager/custom/api/customerUsePoints.do','post'),
-             't'=>array('http://pstore/Index/Store/t','post'),
-             'customerUsePoints'=>array('http://10.100.200.12/CASManager/custom/api/customerUsePoints.do','post'),
-//             'customerUsePoints'=>'http://192.168.188.114/CASManager/custom/api/customerUsePoints.do',
            ),
 );"),
 array('name' => $path . '/application/Bootstrap.php',
@@ -347,13 +344,21 @@ class Bootstrap extends Yaf_Bootstrap_Abstract
     public function _initSession (Yaf_Dispatcher \$dispatcher)
     {
         ini_set('session.save_handler', 'memcache');
-        ini_set('session.save_path', \"tcp://192.168.117.129:11211\");
+        ini_set('session.cookie_domain', '.banggo.tn');
+        ini_set('session.save_path', 'tcp://10.100.200.46:11211');
+//Afx_Debug_Helper::print_r(ini_get_all());
         session_start();
         header('content-type:text/html;charset=utf-8');
     }
     public function _initMemory(Yaf_Dispatcher \$dispatcher){
-       //   ini_set('memory_limit', '2M');
-//        echo  ini_get('memory_limit');
+        ini_set('memory_limit', '128M');
+     //   echo  ini_get('memory_limit');
+    }
+    public function _initMail(){
+
+//          ini_set('sendmail_from', 'administrator@pstore.com');
+//          ini_set('SMTP', '192.168.117.129');
+       //   Afx_Debug_Helper::print_r(ini_get_all());
     }
     /**
      * 初始化文件日志
@@ -370,19 +375,20 @@ class Bootstrap extends Yaf_Bootstrap_Abstract
     public function _initDb (Yaf_Dispatcher \$dispatcher)
     {
         if (file_exists(APP_PATH . '/conf/conf.php')) {
-            \$conf = include_once APP_PATH . '/conf/conf.php';
+            $conf = include_once APP_PATH . '/conf/conf.php';
             try {
                 Yaf_Registry::set('conf', \$conf);
                 Afx_Db_Adapter::initOption(\$conf);
-                Afx_Db_Mongo::setOptions(\$conf);
                 Yaf_Registry::set('conf', \$conf);
                 Afx_Module_Abstract::setAdapter(
                 Afx_Db_Adapter::Instance());
                 Afx_Db_Memcache::initOption(\$conf);
-                Afx_Db_Adapter::\$debug = FALSE;
+               // Afx_Db_Adapter::\$debug = FALSE;
             } catch (Exception \$e) {
-                Afx_Debug_Helper::print_r(\$e->getMessage());
-                exit();
+                Yaf_Registry::set('exception', \$e);
+                \$req=\$dispatcher->getRequest();
+                \$req->setActionName('Error');
+                \$req->setControllerName('Error');
             }
         }
         if (file_exists(APP_PATH . '/conf/mapping.php')) {
@@ -396,7 +402,7 @@ class Bootstrap extends Yaf_Bootstrap_Abstract
      */
     public function _initModel (Yaf_Dispatcher \$dispatcher)
     {
-        ob_start();
+       ob_start();
     }
     public function _initConfig (Yaf_Dispatcher \$dispatcher)
     {
@@ -437,6 +443,7 @@ class Bootstrap extends Yaf_Bootstrap_Abstract
         //        'cache_dir' => \$conf->get('cache_dir'),
         //        'debug' => \$conf->get('debug'),
         //        ));
+        \$conf=Yaf_Registry::get('conf');
         \$dispatcher->disableView();
          //       \$dispatcher->setView(\$smart_adapter);
     }
@@ -449,38 +456,30 @@ class Bootstrap extends Yaf_Bootstrap_Abstract
     public function _initCas (Yaf_Dispatcher \$dispatcher)
     {
 
-        if (file_exists(APP_PATH . '/conf/conf.php')) {
-//                Afx_Debug_Helper::print_r(\$conf);
-                  \$conf=Yaf_Registry::get('conf');
-                try {
-                    Afx_Cas_Helper::\$CASSERVER=\$conf['casServer'];
-                    Afx_Cas_Helper::\$CASURL=\$conf['casUrl'];
-                    Afx_Cas_Helper::\$CASLOGINURL=\$conf['casLoginUrl'];
-                    Afx_Cas_Helper::\$CASLOGOUTURL=\$conf['casLogoutUrl'];
-                } catch (Exception \$e) {
-                      throw new Afx_Db_Exception('Init Cas failed', 1000);
-                }
-            }
     }
 
     /**
-     * 初始化验证插件
+     * 初始化插件
      * @param Yaf_Dispatcher \$dispatcher
      */
     public function _initPlugin (Yaf_Dispatcher \$dispatcher)
     {
-        if (file_exists(APP_PATH . '/conf/forms.php') &&
-         file_exists(APP_PATH . '/conf/messages.php')) {
-            \$forms = require_once APP_PATH . '/conf/forms.php';
-            \$messages = require_once APP_PATH . '/conf/messages.php';
-            Validate::setForms(\$forms);
-            Validate::setMessages(\$messages);
-        }
-        \$form = Form::Instance();
-        \$validate = Validate::Instance();
-        \$ret = \$dispatcher->registerPlugin(\$form)->registerPlugin(\$validate);
+//        if (file_exists(APP_PATH . '/conf/forms.php') &&
+//         file_exists(APP_PATH . '/conf/messages.php')) {
+//            \$forms = require_once APP_PATH . '/conf/forms.php';
+//            \$messages = require_once APP_PATH . '/conf/messages.php';
+//            Validate::setForms(\$forms);
+//            Validate::setMessages(\$messages);
+//        }
+//        \$form = Form::Instance();
+//        \$validate = Validate::Instance();
+//        \$staticUrl=StaticUrl::Instance();
+//        \$ret = \$dispatcher->registerPlugin(\$form)
+//        ->registerPlugin(\$staticUrl)
+//        ->registerPlugin(\$validate);
     }
 }
+
 "),
 array('name' => $path . '/application/controllers/Index.php',
 'content' => '<?php
@@ -491,21 +490,146 @@ class IndexController extends Yaf_Controller_abstract {
 }
  '),
 array('name' => $path . '/application/controllers/Error.php',
-'content' => '<?php
+'content' =>"<?php
 class ErrorController extends Yaf_Controller_Abstract
 {
-    public function errorAction(){
-    $exception = $this->getRequest()->getException();
-   try {
-    throw $exception;
-  } catch (Yaf_Exception_LoadFailed $e) {
-       echo $e->getMessage();
-  } catch (Yaf_Exception $e) {
-       echo $e->getMessage();
-  }
+    public function indexAction ()
+    {
+    }
+    public function errorAction ()
+    {
+        \$conf=Yaf_Registry::get('conf');
+        \$debug=isset(\$conf['mode'])&&\$conf['mode']=='debug'?'debug':'release';
+        \$exception = \$this->getRequest()->getException();
+        if(!\$exception||empty(\$exception))
+        {
+            \$exception=Yaf_Registry::get('exception');
+        }
+        Afx_Static_Helper::setViewVars(\$this, 'activityUrls');
+        Afx_Static_Helper::setViewVars(\$this, 'staticUrls');
+       // Afx_Debug_Helper::print_r(\$exception);
+        //exit;
+        if (\$debug === 'debug') {
+            \$this->getView()->debug = TRUE;
+        }
+        try {
+            throw \$exception;
+        } catch (Yaf_Exception_LoadFailed \$e) {
+             switch(\$e->getCode()){
+                 case '516':
+                  \$this->getView()->code=\$e->getCode();
+                  \$this->getView()->message=\$e->getMessage();
+                  \$this->getView()->file=\$e->getFile();
+                  \$this->getView()->line=\$e->getLine();
+                  \$this->getView()->traceString=\$e->getTraceAsString();
+                  \$this->getView()->errorMessage=\"没有找到网页\";
+                  \$this->getView()->title='404 found';
+                     break;
+                  case '517':
+                  \$this->getView()->code=\$e->getCode();
+                  \$this->getView()->message=\$e->getMessage();
+                  \$this->getView()->file=\$e->getFile();
+                  \$this->getView()->line=\$e->getLine();
+                  \$this->getView()->traceString=\$e->getTraceAsString();
+                  \$this->getView()->errorMessage=\"没有找到网页\";
+                  \$this->getView()->title='404 found\\';
+                     break;
+                  case '520':
+                  \$this->getView()->code=\$e->getCode();
+                  \$this->getView()->message=\$e->getMessage();
+                  \$this->getView()->file=\$e->getFile();
+                  \$this->getView()->line=\$e->getLine();
+                  \$this->getView()->traceString=\$e->getTraceAsString();
+                  \$this->getView()->errorMessage=\"没有找到网页\";
+                  \$this->getView()->title='404 found';
+                     break;
+                 default:
+                     break;
+               }
+               Afx_Logger::log(\$e->getTraceAsString());
+                if(\$this->getRequest()->isXmlHttpRequest()){
+                    if(\$exception instanceof  Exception){
+                        \$data=array('message'=>\$exception->getMessage(),'code'=>\$exception->getCode());
+                        Afx_Response_Helper::makeResponse('','');
+                    }
+                }
+             Yaf_Dispatcher::getInstance()->enableView();
+        } catch (Yaf_Exception \$e) {
+           switch(\$e->getCode()){
+                 case '516':
+                  \$this->getView()->code=\$e->getCode();
+                  \$this->getView()->message=\$e->getMessage();
+                  \$this->getView()->file=\$e->getFile();
+                  \$this->getView()->line=\$e->getLine();
+                  \$this->getView()->traceString=\$e->getTraceAsString();
+                  \$this->getView()->errorMessage=\"没有找到网页\";
+                  \$this->getView()->title='404 found';
+                     break;
+                  case '517':
+                  \$this->getView()->code=\$e->getCode();
+                  \$this->getView()->message=\$e->getMessage();
+                  \$this->getView()->file=\$e->getFile();
+                  \$this->getView()->line=\$e->getLine();
+                  \$this->getView()->traceString=\$e->getTraceAsString();
+                  \$this->getView()->errorMessage=\"没有找到网页\";
+                  \$this->getView()->title='404 found';
+                     break;
+                  case '520':
+                  \$this->getView()->code=\$e->getCode();
+                  \$this->getView()->message=\$e->getMessage();
+                  \$this->getView()->file=\$e->getFile();
+                  \$this->getView()->line=\$e->getLine();
+                  \$this->getView()->traceString=\$e->getTraceAsString();
+                  \$this->getView()->errorMessage=\"没有找到网页\";
+                  \$this->getView()->title='404 found';
+                     break;
+                 default:
+                     break;
+               }
+                Afx_Logger::log(\$e->getTraceAsString());
+                if(\$this->getRequest()->isXmlHttpRequest()){
+                    if(\$exception instanceof  Exception){
+                        \$data=array('message'=>\$exception->getMessage(),'code'=>\$exception->getCode());
+                        Afx_Response_Helper::makeResponse('','');
+                    }
+                }
+             Yaf_Dispatcher::getInstance()->enableView();
+        }catch(Exception \$e)
+        {
+            switch(\$e->getCode()){
+                 case '10061':
+                  \$this->getView()->code=\$e->getCode();
+                  \$this->getView()->message=\$e->getMessage();
+                  \$this->getView()->file=\$e->getFile();
+                  \$this->getView()->line=\$e->getLine();
+                  \$this->getView()->traceString=\$e->getTraceAsString();
+                  \$this->getView()->errorMessage=\"数据库出错\";
+                  \$this->getView()->title='Database Error';
+                     break;
+                  case '10062':
+                  \$this->getView()->code=\$e->getCode();
+                  \$this->getView()->message=\$e->getMessage();
+                  \$this->getView()->file=\$e->getFile();
+                  \$this->getView()->line=\$e->getLine();
+                  \$this->getView()->traceString=\$e->getTraceAsString();
+                  \$this->getView()->errorMessage=\"缓存出错\";
+                  Afx_Logger::log(\$e->getTraceAsString());
+                  \$this->getView()->title='Cache Error';
+                     break;
+                 default:
+                     break;
+               }
+                if(\$this->getRequest()->isXmlHttpRequest()){
+                    if(\$exception instanceof  Exception){
+                        \$data=array('message'=>\$exception->getMessage(),'code'=>\$exception->getCode());
+                        Afx_Response_Helper::makeResponse('','');
+                    }
+                }
+                Yaf_Dispatcher::getInstance()->enableView();
+        }
     }
 }
- '),
+"),
 array('name' => $path . '/application/views/index/index.phtml',
 'content' => '<html>
  <head>
