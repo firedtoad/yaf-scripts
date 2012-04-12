@@ -1,0 +1,39 @@
+Module使用方法  
+继承 Afx_Module_Abstract
+提供一个私有属性
+$_tablename='要映射的表名';
+一个公有静态属性
+$_instance=NULL;//指向自己
+若要实现单例模式添加如下函数
+ public static function Instance ()
+    {
+        if (NULL === self::$_instance) {
+            self::$_instance = new self();
+        }
+        return self::$_instance;
+ }
+在构造函数里调用 父类构造函数,  php子类默认不会调用父类构造函数
+注意添加属性应该以_打头不然解析属性的时候会出问题
+类模版
+class Message extends Afx_Module_Abstract
+{
+    protected $_tablename = 't_message';
+    public static $_instance = NULL;
+    /**
+     * @return Message
+     */
+    public function __construct ()
+    {
+        parent::__construct();
+    }
+    /**
+     * @return Message
+     */
+    public static function Instance ()
+    {
+        if (NULL === self::$_instance) {
+            self::$_instance = new self();
+        }
+        return self::$_instance;
+    }
+}

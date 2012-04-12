@@ -10,6 +10,7 @@
  * @license Free
  */
 /**
+ * smarty 集成
  * @package Afx_Smarty
  * @version $Id Adapter.php
  * The Smarty View Adapter implements the Yaf_View_Interface

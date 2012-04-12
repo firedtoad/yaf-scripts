@@ -165,7 +165,7 @@ public  function getParam(string $name, mixed $default = NULL){}
 /**
  * public Yaf_Request_Abstract::getException(void)
  * @param 
- * @return 
+ * @return Yaf_Exception
  * @since 2.0
 */
 

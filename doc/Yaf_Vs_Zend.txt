@@ -1,0 +1,118 @@
+                     Yaf 与 zend 框架性能比较 
+机器 ip 192.168.188.73
+cpu:四核其中每核配置如下
+processor       : 0
+vendor_id       : GenuineIntel
+model name      : Intel(R) Xeon(R) CPU           E5410  @ 2.33GHz
+cpu MHz         : 2333.333
+cache size      : 6144 KB
+address sizes   : 40 bits physical, 48 bits virtual
+操作系统:
+Distributor ID: CentOS
+Description:    CentOS release 5.6 (Final)
+Release:        5.6
+Codename:       Final
+web服务器环境
+nginx1.09+php-fpm+php.apc
+nginx 配置
+
+worker_processes  8;
+events {
+    use epoll;
+    worker_connections  51200;
+}
+
+100次 10个并发 平均4000
+yaf: ab -n100 -c10 http://192.168.188.73:8000/index 
+Document Path:          /index
+Document Length:        11 bytes
+Concurrency Level:      10
+Time taken for tests:   0.24461 seconds
+Complete requests:      100
+Failed requests:        0
+Write errors:           0
+Total transferred:      15800 bytes
+HTML transferred:       1100 bytes
+Requests per second:    4088.14 [#/sec] (mean)
+Time per request:       2.446 [ms] (mean)
+Time per request:       0.245 [ms] (mean, across all concurrent requests)
+Transfer rate:          613.22 [Kbytes/sec] received
+
+100次 10个并发 平均300
+zend: ab -n100 -c10 http://192.168.188.73:8001/index 
+Document Path:          /index
+Document Length:        12 bytes
+Concurrency Level:      10
+Time taken for tests:   0.334047 seconds
+Complete requests:      100
+Failed requests:        0
+Write errors:           0
+Total transferred:      15900 bytes
+HTML transferred:       1200 bytes
+Requests per second:    299.36 [#/sec] (mean)
+Time per request:       33.405 [ms] (mean)
+Time per request:       3.340 [ms] (mean, across all concurrent requests)
+Transfer rate:          44.90 [Kbytes/sec] received
+1000次 100个并发 平均4500
+yaf: ab -n1000 -c100 http://192.168.188.73:8000/index 
+Document Path:          /index
+Document Length:        11 bytes
+Concurrency Level:      10
+Time taken for tests:   0.24461 seconds
+Complete requests:      100
+Failed requests:        0
+Write errors:           0
+Total transferred:      15800 bytes
+HTML transferred:       1100 bytes
+Requests per second:    4671.78 [#/sec] (mean)
+Time per request:       2.446 [ms] (mean)
+Time per request:       0.245 [ms] (mean, across all concurrent requests)
+Transfer rate:          613.22 [Kbytes/sec] received
+
+1000次 100个并发 平均315
+zend: ab -n1000 -c100 http://192.168.188.73:8001/index 
+Document Path:          /index
+Document Length:        12 bytes
+Concurrency Level:      10
+Time taken for tests:   0.334047 seconds
+Complete requests:      100
+Failed requests:        0
+Write errors:           0
+Total transferred:      15900 bytes
+HTML transferred:       1200 bytes
+Requests per second:    315.16 [#/sec] (mean)
+Time per request:       33.405 [ms] (mean)
+Time per request:       3.340 [ms] (mean, across all concurrent requests)
+Transfer rate:          44.90 [Kbytes/sec] received
+
+10000次 1000个并发 平均 1092 5个进程 40个平均3000
+yaf: ab -n100 -c10 http://192.168.188.73:8000/index 
+Document Path:          /index
+Document Length:        11 bytes
+Concurrency Level:      10
+Time taken for tests:   0.24461 seconds
+Complete requests:      100
+Failed requests:        0
+Write errors:           0
+Total transferred:      15800 bytes
+HTML transferred:       1100 bytes
+Requests per second:    1092.65 [#/sec] (mean)
+Time per request:       2.446 [ms] (mean)
+Time per request:       0.245 [ms] (mean, across all concurrent requests)
+Transfer rate:          613.22 [Kbytes/sec] received
+
+10000次 1000个并发 平均115 开20个fpm进程平均195 40个进程275.26 
+zend: ab -n100 -c10 http://192.168.188.73:8001/index 
+Document Path:          /index
+Document Length:        12 bytes
+Concurrency Level:      10
+Time taken for tests:   0.334047 seconds
+Complete requests:      100
+Failed requests:        0
+Write errors:           0
+Total transferred:      15900 bytes
+HTML transferred:       1200 bytes
+Requests per second:    195.05 [#/sec] (mean)
+Time per request:       33.405 [ms] (mean)
+Time per request:       3.340 [ms] (mean, across all concurrent requests)
+Transfer rate:          44.90 [Kbytes/sec] received

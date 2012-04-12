@@ -33,6 +33,9 @@ class Afx_Request_Helper
     {
         //self::_init();
     }
+    /**
+     * 初始化curl
+     */
     private function _init ()
     {
         $ch = curl_init();
@@ -43,11 +46,16 @@ class Afx_Request_Helper
         self::$ch = $ch;
     }
 
-
+    /**
+     * 关闭curl
+     */
     private function _close ()
     {
         curl_close(self::$ch);
     }
+    /**
+     * 单例自己
+     */
     public static function Instance ()
     {
         if (! self::$_instance) {

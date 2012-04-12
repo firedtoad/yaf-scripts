@@ -22,6 +22,10 @@
  */
 class Afx_Debug_Helper
 {
+	/**
+	 * 调试输出
+	 * Enter description here ...
+	 */
     public static function print_r ()
     {
         // static $colors=array('red','yellow','green');
@@ -86,6 +90,10 @@ class Afx_Debug_Helper
         }
         echo '</pre>';
     }
+    /**
+     * 调试输出
+     * Enter description here ...
+     */
     public static function var_dump ()
     {
         $color = dechex(rand(0, 255)) . dechex(rand(0, 255)) .
@@ -100,6 +108,9 @@ class Afx_Debug_Helper
         }
         echo '</pre>';
     }
+    /**
+     * 调试输出类
+     */
     public static function export ()
     {
         $color = dechex(rand(0, 255)) . dechex(rand(0, 255)) .
@@ -114,6 +125,9 @@ class Afx_Debug_Helper
         }
         echo '</pre>';
     }
+    /**
+     * 调试输出扩展
+     */
     public function exportExtension ()
     {
         $color = dechex(rand(0, 255)) . dechex(rand(0, 255)) .
