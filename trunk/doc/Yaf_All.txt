@@ -1,0 +1,16 @@
+Yaf 集成工作
+1,集成数据库层(封装PDO)
+实现文件
+application/library/Afx/Db/Adapter.php
+application/library/Afx/Db/Exception.php
+application/library/Afx/Db/Memcache.php
+2,集成模型层(提供简单ActiveRecord映射)
+实现文件 
+application/library/Afx/Module/Abstract.php
+3,集成视图层(提供模版缓存)
+实现文件 
+application/library/Afx/Smarty/Adapter.php
+若要使用视图层
+把bootStrap里_initSmarty函数注释的内容打开
+使用建议
+默认不要打开session php默认session机制会成为性能杀手

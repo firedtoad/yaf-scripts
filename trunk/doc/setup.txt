@@ -1,0 +1,20 @@
+----------- Windows ---------------
+1, 将php_memcache.dll,php_yaf.dll两个扩展拷贝到php 扩展目录
+2, 修改php.ini 添加 
+extension=php_yaf.dll
+extension=php_memcache.dll
+3,使用 yaf.php创建目录结构
+php yaf.php path=.
+4,将apache 虚拟目录指向项目目录
+5,重启apache 
+---------- Linux ------------------
+1,下载编译nginx 源码 安装nginx
+2,下载php源码和fpm补丁
+3,解压php源码打fpm补丁 编译php,安装php 
+4,将yaf源码放到php源码扩展目录
+5,编译yaf源码 启用yaf扩展
+6,使用pecl安装memcache
+7,修改nginx 配置文件指向项目目录
+8,启动nginx 启动fpm
+9,使用 yaf.php创建目录结构
+php yaf.php path=.

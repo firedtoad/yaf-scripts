@@ -22,22 +22,39 @@
  */
 class Afx_Db_Mongo
 {
+	/**
+	 * 从库数量
+	 * @var int
+	 */
     protected static $slavenum = 0;
     protected static $_readlink = array();
-    /**
+    /** 单例变量
      * @var Afx_Db_Mongo
      */
     private static $_instance = NULL;
     protected static $_options;
     /**
-     *
+     * 写链接
      * @var Mongo
      */
     protected static $_writelink;
+    /**
+     *  库名
+     * @var string
+     */
     protected static $_writeDb;
+    /**
+     * 集合名
+     * @var string
+     */
     protected static $_writeCollection;
+    /**
+     * 读链接配置
+     * @var array
+     */
     protected static $_readlinkConf;
     /**
+     * 获取mongo配置
      * @return array the $options
      */
     public static function getOptions ()
@@ -45,6 +62,7 @@ class Afx_Db_Mongo
         return Afx_Db_Mongo::$options;
     }
     /**
+     * 获取写链接
      * @return Mongo the $writelink
      */
     public function getWritelink ()
@@ -53,16 +71,24 @@ class Afx_Db_Mongo
         self::$_writeCollection);
     }
     /**
+     * 初始化mongo配置
      * @param array $options
      */
     public static function setOptions ($options)
     {
         Afx_Db_Mongo::$_options = $options;
     }
-    public function __construct ()
+    /**
+     * 单例私有构造函数
+     */
+    private function __construct ()
     {
         $this->_init();
     }
+    /**
+     * 初始化mongo链接
+     * @throws Afx_Db_Exception
+     */
     private function _init ()
     {
         if (is_array(self::$_options) && count(self::$_options) > 0) {
@@ -115,6 +141,13 @@ class Afx_Db_Mongo
             throw new Afx_Db_Exception('no configuration found', '404');
         }
     }
+    
+    /**
+     * mongo find 包装
+     * @param array $condtion
+     * @param mixed $hint
+     * @param bool $master
+     */
     public function find ($condtion = array(), $hint = NULL, $master = False)
     {
         if ($master) {
@@ -133,6 +166,7 @@ class Afx_Db_Mongo
             ->hint($hint));
     }
     /**
+     * 获取读集合
      * @return MongoCollection
      */
     public function getReadLink ()
@@ -145,6 +179,12 @@ class Afx_Db_Mongo
             self::$_readlinkConf[$server_num]['collection']);
         }
     }
+	/**
+	 * 查找一条
+	 * @param array $condtion
+	 * @param mixed $hint
+	 * @param bool $master
+	 */
     public function findOne ($condtion = array(), $hint = NULL, $master = False)
     {
         if ($master) {
@@ -170,45 +210,78 @@ class Afx_Db_Mongo
             ->hint($hint)
             ->limit(1));
     }
+    /**
+     * 插入一条
+     * @param array $data
+     */
     public function insert ($data = array())
     {
         $this->getWritelink()->insert($data);
     }
+    /**
+     * 批量插入
+     * @param array $data
+     */
     public function batchinsert ($data = array())
     {
         $this->getWritelink()->insert($data);
     }
+    /**
+     * 列出数据库
+     */
     public function list_DBs ()
     {
         return self::$_writelink->list_DBs();
     }
+    
     public function connect ()
     {}
     public function close ()
     {}
     public function validate ()
     {}
+    /**
+     * 删除索引
+     */
     public function deleteIndex ($indexName)
     {
         return $this->getWritelink()->deleteIndex($indexName);
     }
+    /**
+     * 创建索引
+     * @param array $key
+     * @param array $options
+     */
     public function ensureIndex ($key = array(), $options = array())
     {
         return $this->getWritelink()->ensureIndex($key, $options);
     }
+    /**
+     * 保存数据
+     * @param array $data
+     */
     public function save ($data = array())
     {
         $this->getWritelink()->save($data);
     }
+    /**
+     * 删除数据
+     * @param array $data
+     */
     public function remove ($data = array())
     {
         $this->getWritelink()->remove($data);
     }
+    /**
+     * 删除数据库
+     * @param unknown_type $dbname
+     */
     public function dropDB ($dbname = NULL)
     {
         self::$_writelink->dropDB($dbname);
     }
     /**
+     * 获取单例变量
      * @return Afx_Db_Mongo
      */
     public static function Instance ()
