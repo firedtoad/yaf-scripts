@@ -20,11 +20,6 @@
  * The Module Class Impliment The Core ORM CRUD Operator
  * @author Afx team && firedtoad@gmail.com &&dietoad@gmail.com
  */
-/**
- *  默认模型兼容 TP
- * @author firedtoad@gmail.com
- *
- */
 class Afx_Module extends Afx_Module_Abstract
 {
     /**

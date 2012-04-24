@@ -22,12 +22,7 @@
  *
  */
  final class Afx_Mail_Helper{
-  /**
-   * 发邮件
-   * @param string $to
-   * @param string $subject
-   * @param string $message
-   */
+
   public static function mailTo($to,$subject,$message){
       $headers = 'From: webmaster@example.com' . "\r\n" .
       'Reply-To: webmaster@example.com' . "\r\n" .

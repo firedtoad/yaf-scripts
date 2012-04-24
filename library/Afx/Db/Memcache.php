@@ -24,30 +24,24 @@
 class Afx_Db_Memcache
 {
     /**
-     * 单例保存类本身
      * @var Afx_Db_Memcache
      */
     protected static $instance;
     /**
-     * 保存memcache 配置
      * @var array store the configurations
      */
     protected static $options = array();
     /**
-     * 保存从库链接
      * @var Memcache The slave Link
      */
     protected static $read_cache = array();
     protected $slave_options = array();
     protected static $slave_num = 0;
     /**
-     * 主库链接
      * @var Memcache The Master Link
      */
     protected static $write_cache;
     /**
-     * 私有构造函数
-     * 初始化memcache链接
      * Notice! This is really protected
      * so this class was prevented be instance
      * by call global new Method
@@ -57,7 +51,6 @@ class Afx_Db_Memcache
         $this->_initConnection();
     }
     /**
-     * 设置memcache配置
      * set the configuration
      * @param array $options
      * @return Boolean
@@ -68,7 +61,7 @@ class Afx_Db_Memcache
         return TRUE;
     }
     /**
-     * 初始化memcache配置
+     *
      * init The Configuration
      * same as setOptions()
      * @param array $options
@@ -79,9 +72,6 @@ class Afx_Db_Memcache
         self::$options = $options;
         return TRUE;
     }
-    /**
-     * 重新初始化memcache链接 
-     */
     public static function reInitConnection ()
     {
         if (self::$instance) {
@@ -89,7 +79,7 @@ class Afx_Db_Memcache
         }
     }
     /**
-     * 获取memcache配置
+     *
      * get the Configuration
      * @return Array
      */
@@ -98,7 +88,7 @@ class Afx_Db_Memcache
         return self::$options;
     }
     /**
-     * 初始化memcache链接
+     *
      * Initialize the Read and Write Link
      * If No Memcache extension loaded Throw Afx_Db_Exception
      * @throws Afx_Db_Exception
@@ -170,9 +160,6 @@ class Afx_Db_Memcache
             throw new Afx_Db_Exception('no memcache configuration found', '404');
         }
     }
-    /**
-     * 随机获取读链接 
-     */
     public static function getReadCache ()
     {
         $server_num = rand(0, self::$slave_num) % self::$slave_num;
@@ -180,16 +167,12 @@ class Afx_Db_Memcache
             return self::$read_cache[$server_num];
         }
     }
-    /**
-     * 获取写链接 
-     */
     public static function getWriteCache ()
     {
         if (self::$write_cache)
             return self::$write_cache;
     }
     /**
-     * memcache Add 包装
      * The Memcache add Wrapper
      * Write To The Master
      * @param string $key
@@ -205,7 +188,7 @@ class Afx_Db_Memcache
         }
     }
     /**
-     * memcache delete 包装
+     *
      * The Memcache delete Wrapper
      * Delete  The Master
      * @param string $key
@@ -219,7 +202,7 @@ class Afx_Db_Memcache
         }
     }
     /**
-     * memcache get 包装
+     *
      * The Memcache get Wrapper
      * Read from the Slave
      * @param string $key
@@ -239,7 +222,6 @@ class Afx_Db_Memcache
         }
     }
     /**
-     * memcache set 包装
      * The Memcache set Wrapper
      * Write To The Master
      * @param string $key
@@ -255,7 +237,6 @@ class Afx_Db_Memcache
         }
     }
     /**
-     * memcache flush 包装
      * please Don't use this method
      * It will delete all the items on the master server
      * if you do really want to clean the master server uncomment this function body
@@ -264,12 +245,12 @@ class Afx_Db_Memcache
      */
     public function flush ()
     {
-//        if (self::$write_cache) {
-//            return self::$write_cache->flush();
-//        }
+        if (self::$write_cache) {
+            return self::$write_cache->flush();
+        }
     }
     /**
-     * memcache replace 包装
+     *
      * The Memcache replace Wrapper
      * replace the master
      * @param string $key
@@ -285,8 +266,7 @@ class Afx_Db_Memcache
             return self::$write_cache->replace($key, $value, $flag, $timeout);
         }
     }
-    /** 
-     * memcache increment 包装
+    /**
      * The Memcache increment Wrapper
      * @param string $key
      * @param int $value
@@ -299,7 +279,6 @@ class Afx_Db_Memcache
         }
     }
     /**
-     * memcache decrement 包装
      * The Memcache decrement Wrapper
      * @param string $key
      * @param int $value
@@ -312,7 +291,6 @@ class Afx_Db_Memcache
         }
     }
     /**
-     * memcache getStatus 包装
      * The Memcache getStatus Wrapper
      * @param string $which can be master or slave or null means all
      * @return array
@@ -333,7 +311,6 @@ class Afx_Db_Memcache
             self::getReadCache()->getStats());
     }
     /**
-     * memcache getVersion 包装
      * The Memcache getVersion Wrapper
      * @return array
      */
@@ -344,21 +321,10 @@ class Afx_Db_Memcache
             self::$write_cache->getVersion());
         }
     }
-    /**
-     * memcache getExtendsStatus 包装
-     * @param string $type
-     * @param int $id
-     * @param int $limit
-     */
     public function getExtendsStatus ($type, $id = 0, $limit = 1000)
     {
         return self::$write_cache->getExtendedStats($type, $id, $limit);
     }
-    /**
-     * 查看指定前缀的值 没有前缀查看所有
-     * dump all the values in memcache prefix by the $prefix variable
-     * @param string $prefix 前缀
-     */
     public function dump ($prefix = NULL)
     {
         $arr = self::$options['memcache']['master'];
@@ -393,7 +359,6 @@ class Afx_Db_Memcache
         }
     }
     /**
-     * Memcache getMulti 包装
      * The Memcache getMulti Wrapper
      * @param  array $arr
      * @param Boolean $master can be true|false default false
@@ -411,7 +376,6 @@ class Afx_Db_Memcache
         return NULL;
     }
     /**
-     * Memcache setMulti 包装
      * The Memcache setMulti Wrapper
      * @param array $arr
      * @param int $timeout
@@ -429,7 +393,6 @@ class Afx_Db_Memcache
         return FALSE;
     }
     /**
-     * 获取单例变量
      * Get the Instance
      * @return Afx_Db_Memcache
      */
@@ -440,21 +403,9 @@ class Afx_Db_Memcache
         }
         return self::$instance;
     }
-    /**
-     * 析构函数
-     */
     function __destruct ()
-    {
-    	
-    }
-    /**
-     * 魔术方法
-     * @param string $m
-     * @param array $arg
-     */
+    {}
     public function __call ($m, $arg)
-    {
-    	
-    }
+    {}
 }
 ?>

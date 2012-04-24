@@ -460,7 +460,7 @@ class phpCAS {
 				} else {
 					$debugDir = DEFAULT_DEBUG_DIR;
 				}
-				$debugDir='D:/';
+				//$debugDir='D:/';
 				$filename = $debugDir . 'phpCAS.log';
 			}
 
