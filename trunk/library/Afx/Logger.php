@@ -28,21 +28,12 @@ class Afx_Logger
     public static $_filenum = 0;
     //128M 一个文件
     public static $_log_size = 134217728;
-    /**
-     * 比较函数
-     * @param mixed $a
-     * @param mixed $b
-     */
     public static function cmp ($a, $b)
     {
         $a = array_pop(explode('/', $a));
         $b = array_pop(explode('/', $b));
         return substr($a, 7) - substr($b, 7);
     }
-    /**
-     * 记录日志
-     * @param string $msg
-     */
     public static function log ($msg = 'success')
     {
         $debug = debug_backtrace();

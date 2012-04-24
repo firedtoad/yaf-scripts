@@ -27,9 +27,6 @@ class Afx_Cas_Helper
     public static $CASLOGINURL='';
     public static $CASLOGOUTURL='';
     public static $INITLOCK=FALSE;
-    /**
-     * 初始化CAS客户端 
-     */
     public static function initCAS ()
     {   if(self::$INITLOCK==TRUE)return TRUE;
         require_once 'application/library/CAS.php';
@@ -52,9 +49,6 @@ class Afx_Cas_Helper
         phpCAS::setServerLogoutURL(self::$CASLOGOUTURL);
         self::$INITLOCK=TRUE;
     }
-    /**
-     * 初始化cas代理 
-     */
     public static function initProxy ()
     {
         require_once 'application/library/CAS.php';

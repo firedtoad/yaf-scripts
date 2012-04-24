@@ -21,96 +21,74 @@
  * @author Afx team && firedtoad@gmail.com &&dietoad@gmail.com
  */
 abstract class Afx_Module_Abstract
-{ 
-	/**
-	 * 默认主键
-	 * @var string
-	 */
+{
     public $_key = 'id';
+    protected   $_tablename = 't_dummy';
     /**
-     * 默认表名
-     * 必须被子类覆盖
-     * @var unknown_type
-     */
-    protected $_tablename = 't_dummy';
-    /**
-     * 是否排重
      * var Boolean
      */
     protected $_distinct = FALSE;
     /**
-     * 保存适配器
+     *
      * @var Afx_Db_Adapter
      */
     protected static $_adapter = NULL;
-    /** 
-     * 保存查询后的对象数据
-     * 更新时做比较用
+    /**
      * store the Object fetch from database and compare for update
      * @var stdClass
      */
     private $_obj;
     /**
-     * 提取数量限制
      * @var int $_limit the limit of per resultset
      */
     protected $_limit = 100;
     /**
-     * 保存where and 条件
      * store the condition used by the sql statment
      * @var array
      */
     protected $_where = array();
     /**
-     * 保存要提取的字段
+     *
      * store the fields used by the sql statment
      * @var array()
      */
     protected $_field = array();
     /**
-     * 本次操作生成的sql
      * store the sql statment
      * @var string $_sql
      */
     protected $_sql = NULL;
     /**
-     * 提取偏移
      * start offset
      * @var int
      */
     protected $_offset = 0;
     /**
-     * 保存模糊查询条件
      * like condition
      * @var string
      */
     protected $_like = NULL;
     /**
-     * 保存or 条件
      * store the or condition
      * @var array
      */
     protected $_wor = array();
     /**
-     * 联表查询条件
      * store the join condition
      * @var array
      */
     protected $_join = array();
     /**
-     * 结果集 
      * store the result array
      * @var array
      */
     protected $_result_array;
     /**
-     * 联表on 条件
      * the on condition
      * @var array
      */
     protected $_on = array();
     /**
-     * 排序条件
      * @var string order
      */
     protected $_order = NULL;
@@ -120,26 +98,42 @@ abstract class Afx_Module_Abstract
      */
     protected static $_instance = NULL;
     /**
-     * 分组条件
      * @var string
      */
     protected $_groupBy;
     /**
-     * 随机条件
      * @var Boolean
      */
     protected $_random;
+     /**
+     * @var Afx_Moudule_Partition_PartitionInterface
+     */
+    public  $_partition=NULL;
     /**
-     * 获取内部保存的查询出来的数据
      * Get the pure Object Fetch From The database
      * @return stdClass
      */
-    public function getObj ()
+
+    /**
+	 * @return the $_partition
+	 */
+	public function getPartition() {
+		return $this->_partition;
+	}
+
+	/**
+	 * @param Afx_Moudule_Partition_PartitionInterface $_partition
+	 */
+	public function setPartition($_partition) {
+//		var_dump($_partition);
+		$this->_partition = $_partition;
+	}
+
+	public function getObj ()
     {
         return $this->_obj;
     }
     /**
-     * 设置内部数据
      * set The Pure Object  for insert
      * @deprecated
      * @param stdClass $_obj
@@ -149,7 +143,6 @@ abstract class Afx_Module_Abstract
         $this->_obj = $_obj;
     }
     /**
-     * 获取数据库适配器
      * Get the Db Adapter
      * @return Afx_Db_Adapter
      */
@@ -161,18 +154,13 @@ abstract class Afx_Module_Abstract
             throw new Afx_Db_Exception('数据库出错', '10061');
         }
     }
-    /**
-     * 产生安全sql
-     * @param mixed $v
-     * @param string $style
-     */
+
     public function quote($v,$style=NULL){
         if(self::$_adapter instanceof  Afx_Db_Adapter){
         return self::$_adapter->quote($v,$style);
         }
     }
     /**
-     * 魔术方法__set
      * Magic function __set
      * @param string $name
      * @param mixed $value
@@ -182,18 +170,21 @@ abstract class Afx_Module_Abstract
         $this->$name = $value;
     }
     /**
-     * 魔术方法__get
-     * Magic function __get
+     *
+     * Magic function __set
      * @param string $name
      * @retunr  mixed
      */
     public function __get ($name)
     {
         //        return self::$_instance->$name;
-        return $this->$name;
+        if(property_exists('Afx_Module_Abstract', $name))
+        {
+        	 return $this->$name;
+        }
+       
     }
     /**
-     * 设置适配器
      * Set the Db Adapter
      * @param Afx_Db_Adapter $_adapter
      */
@@ -202,14 +193,15 @@ abstract class Afx_Module_Abstract
         self::$_adapter = $_adapter;
     }
     /**
-     * 构造函数
      * constructor function
      * Here We use Default Db Adapter
      */
     public function __construct ()
-    {}
+    {
+    	$this->_partition=Afx_Module_Partition_Logic::Instance();
+//    	Afx_Debug_Helper::print_r($this->getPartition());
+    }
     /**
-     * 转换数组到标准对象
      * Convert An Array To A stdClass
      * @param array $arr
      * @return stdClass
@@ -226,7 +218,6 @@ abstract class Afx_Module_Abstract
         return NULL;
     }
     /**
-     * 转换标准对象到数组
      * Convert An stdClass To A Array
      * @param stdClass $obj
      * @return array
@@ -246,7 +237,6 @@ abstract class Afx_Module_Abstract
         return count($arr) ? $arr : NULL;
     }
     /**
-     * 关联数组键给类赋值
      * apply an array keys as self properties
      * @param array $arr
      */
@@ -259,10 +249,20 @@ abstract class Afx_Module_Abstract
             $this->$k = $v;
         }
     }
+    
     /**
-     * 保存数据到数据库
-     * 如果是新建的类就插入
-     * 如果是查询出来的对象并且修改过就更新
+     * inner do partition
+     */
+    private function _doPartition(){
+    	if(is_object($this->_partition)){
+    	    if(method_exists($this->_partition, 'doPartition'))	
+    	    {
+    	    	$this->_tablename=$this->_partition->doPartition($this,$this->_key);
+    	    }
+    	}
+    }
+    
+    /**
      * save an object to the database
      * the most complicated function
      * @param void
@@ -270,6 +270,8 @@ abstract class Afx_Module_Abstract
      */
     public function save ()
     {
+    	//Afx_Debug_Helper::print_r($this->_partition);
+    	$this->_doPartition();
         $sql = '';
         if ($this->_obj === NULL) {
             /*
@@ -384,13 +386,13 @@ abstract class Afx_Module_Abstract
         }
     }
     /**
-     * 删除某个 主键 为$id的对象
      * delete the object in the database
      * @param int $id
      * @return TRUE if success else FALSE
      */
     public function delete ($id = NULL)
     {
+    	$this->_doPartition();
         $rid = $id ? ($id >= 0 ? $id : NULL) : $this->_obj->id ? ($this->_obj->id >=
          0 ? $this->_obj->id : NULL) : NULL;
         if (! $rid) {
@@ -401,7 +403,6 @@ abstract class Afx_Module_Abstract
         return $this->getAdapter()->execute($sql, $this->_tablename);
     }
     /**
-     * 根据主键$id获取响应对象
      * select an object from the database id is the specific id
      * @param long $id
      * @param  Boolean $master whether operator the master
@@ -409,13 +410,14 @@ abstract class Afx_Module_Abstract
      */
     public function getOne ($id = NULL, $master = FALSE)
     {
+    	$this->_doPartition();
         if ($id && ! is_numeric($id)) {
             return NULL;
         }
         $sql = '';
         if (! $this->_random) {
             $sql = sprintf(
-            'SELECT * FROM ' . $this->_tablename . ' WHERE `%s`=%d',$this->_key, $id);
+            'SELECT * FROM ' . $this->_tablename . ' WHERE `id`=%d', $id);
         } else {
             $sql = sprintf(
             'SELECT * FROM ' . $this->_tablename . ' ORDER BY RAND() limit 1');
@@ -429,14 +431,13 @@ abstract class Afx_Module_Abstract
         return NULL;
     }
     /**
-     * 获取随机一条对象
-     * 数据很多时会慢的要命
      * get an Object from the database by random use where and or condition
      * @param Boolean $master whether from the master
      * @return Afx_Module_Abstract
      */
     public function getRandom ($master = FALSE)
     {
+    	$this->_doPartition();
         $sql = 'SELECT * FROM ' . $this->_tablename;
         // process where
         $hasWhere = 0;
@@ -480,7 +481,6 @@ abstract class Afx_Module_Abstract
         return NULL;
     }
     /**
-     * 一个条件查找
      * Find One Object from database use specific key and value
      * @param string $k
      * @param  mixed $v
@@ -489,6 +489,7 @@ abstract class Afx_Module_Abstract
      */
     public function findOne ($k, $v, $master = FALSE)
     {
+    	$this->_doPartition();
         if (empty($k) || empty($v)) {
             return NULL;
         }
@@ -505,12 +506,12 @@ abstract class Afx_Module_Abstract
         return NULL;
     }
     /**
-     * 根据保存的条件生成sql
      * generate the sql string use the conditions
      * @return string
      */
     private function _generateSql ()
     {
+    	$this->_doPartition();
         $sql = 'SELECT ';
         if ($this->_distinct) {
             $sql .= 'DISTINCT ';
@@ -603,7 +604,6 @@ abstract class Afx_Module_Abstract
         return $sql;
     }
     /**
-     * 提取记录
      * select the result from database use conditions
      * @param int $limit
      * @param int $offset
@@ -611,6 +611,7 @@ abstract class Afx_Module_Abstract
      */
     public function select ($limit = 100, $offset = 0, $master = FALSE)
     {
+    	//$this->_tablename=$this->_partition->doPartition($this,$this->_key);
         $this->_limit = $limit == 100 ? $this->_limit : $limit;
         $sql = 'SELECT ';
         if ($this->_distinct) {
@@ -705,7 +706,6 @@ abstract class Afx_Module_Abstract
         $this->_tablename, $master);
     }
     /**
-     * 设置提取限制条数
      * set limit
      * @param int $limit
      */
@@ -715,7 +715,6 @@ abstract class Afx_Module_Abstract
         return $this;
     }
     /**
-     * 设置排序方式
      * set order
      * @param string $key
      * @param string $desc
@@ -726,7 +725,6 @@ abstract class Afx_Module_Abstract
         return $this;
     }
     /**
-     * 设置and条件
      * set where condition
      * @param string $key
      * @param mixed $value
@@ -747,7 +745,6 @@ abstract class Afx_Module_Abstract
         return $this;
     }
     /**
-     * 设置提取字段
      * set fetch field
      * @param array $fields
      */
@@ -761,7 +758,6 @@ abstract class Afx_Module_Abstract
         return $this;
     }
     /**
-     * 查找列表
      * find A List from the Database
      * @param array $options
      * @param int $limit
@@ -772,6 +768,7 @@ abstract class Afx_Module_Abstract
     public function findList ($options = array(), $limit = 1000, $offset = 0,
     $master = FALSE)
     {
+    	$this->_doPartition();
         if (! count($options)) {
             return array();
         }
@@ -790,7 +787,6 @@ abstract class Afx_Module_Abstract
         $this->_tablename, $master);
     }
     /**
-     * 获取列表
      * get a list from the database
      * @param int $offset
      * @param int $limit
@@ -799,18 +795,18 @@ abstract class Afx_Module_Abstract
      */
     public function getList ($offset = 0, $limit = 1000, $master = FALSE)
     {
+    	//$this->_tablename=$this->_partition->doPartition($this,$this->_key);
         $sql = sprintf(
         'SELECT * FROM ' . $this->_tablename . " LIMIT $offset,$limit ");
         return $this->_result_array = $this->getAdapter()->execute($sql,
         $this->_tablename, $master);
     }
     /**
-     * 获取所有
-     * 谨慎使用
      * @return array
      */
     public function getListALL ()
     {
+    	$this->_tablename=$this->_partition->doPartition($this,$this->_key);
         $limit = $this->_limit;
         $this->_limit = NULL;
         $ret = $this->select();
@@ -818,7 +814,7 @@ abstract class Afx_Module_Abstract
         return $ret;
     }
     /**
-     * 设置偏移
+     *
      * set offset
      * @param int $offset
      * @return Afx_Module_Abstract
@@ -842,7 +838,7 @@ abstract class Afx_Module_Abstract
     }
      */
     /**
-     * 设置联表条件
+     *
      * set join condition
      * @param string $table the table to join
      * @param string $lkey the left join key
@@ -856,7 +852,7 @@ abstract class Afx_Module_Abstract
         return $this;
     }
     /**
-     * 设置Or条件
+     *
      * set or conditon
      * @param string $key
      * @param mix $value
@@ -875,13 +871,15 @@ abstract class Afx_Module_Abstract
         return $this;
     }
     /**
-     * 插入数据 支持多条
      * @param array $arr the array to insert can be one or two demision
      * @param Boolean $master whether operator the master
      * @param Boolean $usetrans whether use transection
      */
     public function insert ($arr = array(), $master = FALSE, $usetrans = FALSE)
     {
+    	$this->_doPartition();
+//    	Afx_Debug_Helper::print_r($arr);
+//        echo sizeof($arr),"<br/>";
         if (is_array($arr) && count($arr) > 0) {
             if (! isset($arr[0])) {
                 $sql = 'INSERT INTO ' . $this->_tablename . ' (';
@@ -901,6 +899,7 @@ abstract class Afx_Module_Abstract
                 $lastIndex = strrpos($sql, ',');
                 $sql = substr($sql, 0, $lastIndex);
                 $sql .= ')';
+//                echo '<br>';
                 return $this->getAdapter()->execute($sql, $this->_tablename,
                 $master, $usetrans);
             }
@@ -939,9 +938,6 @@ abstract class Afx_Module_Abstract
             }
         }
     }
-    /**
-     *  查看查询效率
-     */
     public function expain ()
     {
         $sql = "EXPLAIN " . $this->getAdapter()->getLastSql();
@@ -949,7 +945,6 @@ abstract class Afx_Module_Abstract
         Afx_Debug_Helper::print_r($explain);
     }
     /**
-     * 非法数据过滤
      * pass the value ;
      * @param mixed $v
      */
@@ -980,7 +975,6 @@ abstract class Afx_Module_Abstract
         return $ret;
     }
     /**
-     * 处理in 条件
      * @var mixed array or sql string $in
      */
     private function _processIn ($inArr)
@@ -995,7 +989,6 @@ abstract class Afx_Module_Abstract
         return $str;
     }
     /**
-     * 统计
      * count the result from the database
      * @return int
      */
@@ -1019,7 +1012,6 @@ abstract class Afx_Module_Abstract
         return isset($ret['0']['COUNT(*)']) ? $ret['0']['COUNT(*)'] : 0;
     }
     /**
-     * 排重
      * @return Afx_Module_Abstract
      */
     public function distinct ()
@@ -1028,7 +1020,6 @@ abstract class Afx_Module_Abstract
         return $this;
     }
     /**
-     * 设置随机
      * @return Afx_Module_Abstract
      */
     public function random ()
@@ -1037,7 +1028,6 @@ abstract class Afx_Module_Abstract
         return $this;
     }
     /**
-     * 分组
      * @return Afx_Module_Abstract
      */
     public function groupBy ($key)
