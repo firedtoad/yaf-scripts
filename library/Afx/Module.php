@@ -22,6 +22,7 @@
  */
 class Afx_Module extends Afx_Module_Abstract
 {
+
     /**
      * create the module object using the given table name
      * @param string $tablename
@@ -29,6 +30,7 @@ class Afx_Module extends Afx_Module_Abstract
      */
     public function __construct ($tablename = 'tablename')
     {
-      $this->_tablename=$tablename;
+        $this->_tablename = $tablename;
+        $this->_from = $tablename;
     }
 }
