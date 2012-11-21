@@ -20,32 +20,35 @@
  * The Module Class Impliment The Core ORM CRUD Operator
  * @author Afx team && firedtoad@gmail.com &&dietoad@gmail.com
  */
-class Afx_Module_Partition_Logic 
-implements Afx_Module_Partition_PartitionInterface 
-{ 
-//	 public static $_formula='#key=#key/100000';
-	 public static $_partition_size=10;
-	 /**
-	  * @var Afx_Module_Partition_Logic
-	  */
-	 private static $_instance;
-	 /**
-	 * @param Afx_Module_Abstract $moudule
-	 */
-	  public function doPartition(Afx_Module_Abstract $moudule,$key='id'){
-	  	    $l_suffix=intval($moudule->$key/self::$_partition_size);
-	  	    $l_suffix=$l_suffix>0?$l_suffix:'';
-			return $moudule->_tablename.$l_suffix;
-		}
-	 public static function Instance($new=FALSE){
-	 	
-		if($new)return new self();
-		if(!self::$_instance instanceof Afx_Module_Partition_Logic)
-		{
-			self::$_instance=new self();
-		}
-		return self::$_instance;
-	}
-}
+class Afx_Module_Partition_Logic implements Afx_Module_Partition_PartitionInterface
+{
 
+    //	 public static $_formula='#key=#key/100000';
+    public static $_partition_size = 10;
+
+    /**
+     * @var Afx_Module_Partition_Logic
+     */
+    private static $_instance;
+
+    /**
+     * @param Afx_Module_Abstract $moudule
+     */
+    public function doPartition (Afx_Module_Abstract $moudule, $key = 'id')
+    {
+        $l_suffix = intval($moudule->$key / self::$_partition_size);
+        $l_suffix = $l_suffix > 0 ? $l_suffix : '';
+        return $moudule->_tablename . $l_suffix;
+    }
+
+    public static function Instance ($new = FALSE)
+    {
+        if ($new) return new self();
+        if (! self::$_instance instanceof Afx_Module_Partition_Logic)
+        {
+            self::$_instance = new self();
+        }
+        return self::$_instance;
+    }
+}
 ?>

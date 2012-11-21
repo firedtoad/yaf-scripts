@@ -20,14 +20,13 @@
  * The Module Class Impliment The Core ORM CRUD Operator
  * @author Afx team && firedtoad@gmail.com &&dietoad@gmail.com
  */
-class  Afx_Module_Partition_Physics 
-implements Afx_Module_Partition_PartitionInterface
+class Afx_Module_Partition_Physics implements Afx_Module_Partition_PartitionInterface
 {
-	/**
-	 * @param Afx_Module_Abstract $moudule
-	 */
-	public function doPartition(Afx_Module_Abstract $moudule,$key='id')
-	{
-		
-	}
+
+    /**
+     * @param Afx_Module_Abstract $moudule
+     */
+    public function doPartition (Afx_Module_Abstract $moudule, $key = 'id')
+    {
+    }
 }
