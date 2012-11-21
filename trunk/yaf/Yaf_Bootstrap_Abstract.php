@@ -2,8 +2,7 @@
 /**
  * Yaf_Bootstrap_Abstract
  * @since 2.0
-*/
-
-class  Yaf_Bootstrap_Abstract{
-
+ */
+class Yaf_Bootstrap_Abstract
+{
 }
