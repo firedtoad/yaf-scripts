@@ -1,14 +1,31 @@
 <?php
-class Afx_Db_Mysqli_Result
+/**
+ * @version $Id: Result.php 94 2012-12-10 03:39:40Z zhujinghe $
+ * @author zhangwenhao 
+ *
+ */
+class Afx_Db_Mysqli_Result implements Afx_Db_Result
 {
 
     /**
      * @var mysqli_result
      */
     public $result;
-
+    /**
+     * @var mysqli
+     */
+    public $link;
     public $__result_array = array();
 
+    
+    public function affected ()
+    {
+        return  $this->link->affected_rows;
+    }
+    public function insertId()
+    {
+        return $this->link->insert_id;
+    }
     public function recordCount ()
     {
         return $this->result->num_rows;

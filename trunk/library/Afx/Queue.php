@@ -1,6 +1,6 @@
 <?php
 /**
- * @version $Id: Queue.php 0 2012-11-08 10:55:01Z zhangwenhao $
+ * @version $Id: Queue.php 94 2012-12-10 03:39:40Z zhujinghe $
  * The Queue Class Encapsulation with Redis in background  
  * @author zhangwenhao 
  */
@@ -72,7 +72,32 @@ class Afx_Queue
         {
             $cache->delete($key);
         }
+        if (is_array($value))
+        {
+            $value = serialize($value);
+        }
         return $cache->lPush($key, $value);
+    }
+
+    /**
+     * prepend a value to  list
+     * @param string $key
+     * @param string $value
+     * @return string
+     */
+    public function rPush ($key, $value)
+    {
+        $cache = $this->__cache;
+        //        键不是列表 删掉
+        if ($cache->type($key) != 3)
+        {
+            $cache->delete($key);
+        }
+        if (is_array($value))
+        {
+            $value = serialize($value);
+        }
+        return $cache->rPush($key, $value);
     }
 
     /**
@@ -91,13 +116,17 @@ class Afx_Queue
             {
                 $cache->delete($key);
             }
+            echo $key;
             $first = array_shift($values);
             $cache->lPush($key, $first);
+         
             foreach ($values as $value)
-            {
+            {  
                 if (! $cache->lPushx($key, $value))
                 {
+                    
                     $op_ok = FALSE;
+                    break;
                 }
             }
         }
@@ -107,12 +136,63 @@ class Afx_Queue
     /**
      * get and remove the value from the list by the specific key
      * @param key $key
+     * @param boolean $ret_array
      * @return string
      */
-    public function pop ($key)
+    public function pop ($key, $ret_array = FALSE)
     {
         $cache = $this->__cache;
-        return $cache->rPop($key);
+        $ret = $cache->rPop($key);
+        if ($ret_array)
+        {
+            $ret = unserialize($ret);
+        }
+        return $ret;
+    }
+
+    /**
+     * insert list before the specific index
+     * @param string $key
+     * @param mixed $value
+     * @param int $index
+     * @return mixed
+     */
+    public function lInsertBefore ($key, $value, $index)
+    {
+        $cache = $this->__cache;
+        $ret = $cache->lInsert($key, 'before', $index, $value);
+        return $ret;
+    }
+
+    /**
+     * insert list after the specific index
+     * @param string $key
+     * @param mixed $value
+     * @param int $index
+     * @return mixed
+     */
+    public function lInsertAfter ($key, $value, $index)
+    {
+        $cache = $this->__cache;
+        $ret = $cache->lInsert($key, 'after', $index, $value);
+        return $ret;
+    }
+
+    /**
+     * pop the leftest element
+     * @param key $key
+     * @param boolean $ret_array
+     * @return string
+     */
+    public function lPop ($key, $ret_array = FALSE)
+    {
+        $cache = $this->__cache;
+        $ret = $cache->lPop($key);
+        if ($ret_array)
+        {
+            $ret = unserialize($ret);
+        }
+        return $ret;
     }
 
     /**

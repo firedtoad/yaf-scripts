@@ -1,6 +1,6 @@
 <?php
 /*
- * @version $Id: ChatClient.php 57 2012-09-11 10:13:43Z zhangwenhao $
+ * @version $Id: ChatClient.php 94 2012-12-10 03:39:40Z zhujinghe $
  */
 /**
  * 聊天客户端
