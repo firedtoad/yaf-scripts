@@ -1,6 +1,6 @@
 <?php
 /**
- * @version $Id: Config.php 0 2012-11-08 10:55:01Z zhangwenhao $
+ * @version $Id: Config.php 118 2012-12-12 04:01:40Z cfc4n $
  * The Afx_Config Class Encapsulation
  * @author zhangwenhao 
  */
@@ -25,15 +25,45 @@ class Afx_Config extends Afx_Module_Abstract
 
     private $array_cache = array();
 
+    private static $__allow_backend = array(
+        'apc','redis','memcache'
+    );
+
+    private static $__cache_backend = 'apc';
+
+    public static function setBackend ($backend)
+    {
+        if (in_array($backend, self::$__allow_backend))
+        {
+            self::$__cache_backend = $backend;
+        }
+    }
+
     public function __construct ()
     {
+        $this->_init();
         $this->getAdapter()->selectDatabase('jv06');
         $config = Yaf_Registry::get('config');
         self::$__seg = $config['seg'];
-        self::$__cache = Afx_Cache_Factory::getCache(Afx_Cache_Factory::CACHE_APC);
+        $cache = NULL;
+        switch (self::$__cache_backend)
+        {
+            case 'apc':
+                $cache = Afx_Cache_Factory::getCache(Afx_Cache_Factory::CACHE_APC);
+                break;
+            case 'redis':
+                $cache = Afx_Cache_Factory::getCache(Afx_Cache_Factory::CACHE_REDIS);
+                break;
+            case 'memcache':
+                $cache = Afx_Cache_Factory::getCache(Afx_Cache_Factory::CACHE_MEMCACHE);
+                break;
+            default:
+                break;
+        }
+        self::$__cache = $cache;
     }
 
-    public function getConfig ($cache_name, $index = NULL)
+    public function getConfig ($cache_name, $index = NULL, $index_name = 'name')
     {
         $result = $this->__getCacheData($cache_name, $index);
         if (! $result)
@@ -44,7 +74,8 @@ class Afx_Config extends Afx_Module_Abstract
                 ->result();
             if ($result)
             {
-                $this->__saveCacheData($cache_name, $result);
+                $result = $this->__filter($result, $index_name);
+                $this->__saveCacheData($cache_name, $result, $index_name);
             }
         }
         $ret = $result;
@@ -122,7 +153,7 @@ class Afx_Config extends Afx_Module_Abstract
                         foreach ($keys as $k)
                         {
                             $lcache = self::$__cache->get($cache_name . $k);
-                            $cache = array_merge($cache, $lcache);
+                            $cache = $lcache&&array_merge($cache, $lcache);
                         }
                     }
                 }
@@ -131,7 +162,7 @@ class Afx_Config extends Afx_Module_Abstract
         return $index ? (isset($cache[$index]) ? $cache[$index] : '') : $cache;
     }
 
-    private function __saveCacheData ($cache_name, $result)
+    private function __saveCacheData ($cache_name, $result, $index_name = 'name')
     {
         $rows = count($result);
         $arr = array();
@@ -141,17 +172,17 @@ class Afx_Config extends Afx_Module_Abstract
         {
             foreach ($result as $value)
             {
-                $hash = self::times33($value['name']) % self::$__seg;
+                $hash = self::times33($value[$index_name]) % self::$__seg;
                 if ($need_seg)
                 {
                     if (! isset($arr[$hash]))
                     {
                         $arr[$hash] = array();
                     }
-                    $arr[$hash][$value['name']] = $value;
+                    $arr[$hash][$value[$index_name]] = $value;
                 } else
                 {
-                    $arr[$value['name']] = $value;
+                    $arr[$value[$index_name]] = $value;
                 }
             }
         }
@@ -163,7 +194,7 @@ class Afx_Config extends Afx_Module_Abstract
                 foreach ($arr as $k => $value)
                 {
                     $key_array[] = $k;
-                    self::$__cache->set($cache_name . $k, $value);
+                    self::$__cache->set($cache_name . $k, $value, 0);
                 }
                 sort($key_array);
                 self::$__cache->set($cache_name, $key_array);
@@ -173,6 +204,22 @@ class Afx_Config extends Afx_Module_Abstract
             }
         }
         return TRUE;
+    }
+
+    private function __filter ($result = array(), $index_name = 'name')
+    {
+        $ret_array = array();
+        if (count($result))
+        {
+            foreach ($result as $value)
+            {
+                if (isset($value[$index_name]))
+                {
+                    $ret_array[$value[$index_name]] = $value;
+                }
+            }
+        }
+        return $ret_array;
     }
 }
 
@@ -218,4 +265,36 @@ class CHashBit
         }
         return $code;
     }
+}
+
+/*
+** 仿zend 的time33 算法，将结果取余之后，需要abs函数转化为正整数。稍微多了一步，但性能稍高。
+** @return 整数，包括负数。
+*/
+function __times33Zend ($arKey)
+{
+    $nKeyLength = strlen($arKey);
+    $hash = 5381;
+    $m = 0;
+    for (; $nKeyLength >= 8; $nKeyLength -= 8) {
+        $hash = (($hash << 5) + $hash) + ord($arKey{$m});$m++;
+        $hash = (($hash << 5) + $hash) + ord($arKey{$m});$m++;
+        $hash = (($hash << 5) + $hash) + ord($arKey{$m});$m++;
+        $hash = (($hash << 5) + $hash) + ord($arKey{$m});$m++;
+        $hash = (($hash << 5) + $hash) + ord($arKey{$m});$m++;
+        $hash = (($hash << 5) + $hash) + ord($arKey{$m});$m++;
+        $hash = (($hash << 5) + $hash) + ord($arKey{$m});$m++;
+        $hash = (($hash << 5) + $hash) + ord($arKey{$m});$m++;
+    }
+    switch ($nKeyLength) {
+        case 7: $hash = (($hash << 5) + $hash) + ord($arKey{$m});$m++;
+        case 6: $hash = (($hash << 5) + $hash) + ord($arKey{$m});$m++;
+        case 5: $hash = (($hash << 5) + $hash) + ord($arKey{$m});$m++;
+        case 4: $hash = (($hash << 5) + $hash) + ord($arKey{$m});$m++;
+        case 3: $hash = (($hash << 5) + $hash) + ord($arKey{$m});$m++;
+        case 2: $hash = (($hash << 5) + $hash) + ord($arKey{$m});$m++;
+        case 1: $hash = (($hash << 5) + $hash) + ord($arKey{$m});$m++; break;
+        case 0: break;
+    }
+    return $hash;
 }

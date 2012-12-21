@@ -1,4 +1,9 @@
 <?php
+/**
+ * @version $Id: Adapter.php 146 2012-12-20 05:54:36Z zhangwenhao $
+ * @author zhangwenhao 
+ *
+ */
 class Afx_Db_Mysqli_Adapter implements Afx_Db_Adapter
 {
 
@@ -34,6 +39,8 @@ class Afx_Db_Mysqli_Adapter implements Afx_Db_Adapter
     private $__pass;
 
     private $__persist;
+
+    private $__timeout;
 
     private $__charset = 'utf8';
 
@@ -76,7 +83,7 @@ class Afx_Db_Mysqli_Adapter implements Afx_Db_Adapter
     {
         if ($create)
         {
-            self::$__instance = new self();
+            return new self();
         }
         if (! self::$__instance instanceof Afx_Db_Mysqli_Adapter)
         {
@@ -90,11 +97,19 @@ class Afx_Db_Mysqli_Adapter implements Afx_Db_Adapter
      */
     public function selectDatabase ($dbname)
     {
-         if(!is_object($this->__link))
-         {
-             $this->__init();
-         }
-         $this->__link->select_db($dbname);
+        $oldname = $this->__dbname;
+        $this->__dbname = $dbname;
+        $this->__config['dbname'] = $dbname;
+        if (! is_object($this->__link))
+        {
+            $this->__init();
+        } else
+        {
+            if ($oldname != $dbname)
+            {
+                $this->__link->select_db($dbname);
+            }
+        }
     }
 
     public function setConfig ($config)
@@ -106,11 +121,17 @@ class Afx_Db_Mysqli_Adapter implements Afx_Db_Adapter
         $this->__dbname = $config['dbname'];
         $this->__socket = $config['socket'];
         $this->__persist = $config['persist'];
+        $this->__timeout = $config['timeout'];
         if ($this->__persist == TRUE)
         {
             $this->__host = 'p:' . $this->__host;
         }
         $this->__config = $config;
+    }
+
+    public function getConfig ()
+    {
+        return $this->__config;
     }
 
     public function getLastSql ()
@@ -120,9 +141,10 @@ class Afx_Db_Mysqli_Adapter implements Afx_Db_Adapter
 
     public function quote ($v, $type)
     {
-//        return $v;
-        return gettype($v)=='string'?"'".$this->__link->real_escape_string($v)."'":$v;
-//        return gettype($v)=='string'?"'$v'":$v;
+        if (! $this->__link) $this->__init();
+        //        return $v;
+        return gettype($v) == 'string' ? "'" . $this->__link->real_escape_string($v) . "'" : $v;
+         //        return gettype($v)=='string'?"'$v'":$v;
     }
 
     public function commit ()
@@ -134,6 +156,7 @@ class Afx_Db_Mysqli_Adapter implements Afx_Db_Adapter
     public function startTrans ()
     {
         $this->__link->autocommit(FALSE);
+         //        $this->__link->
     }
 
     public function rollBack ()
@@ -161,28 +184,40 @@ class Afx_Db_Mysqli_Adapter implements Afx_Db_Adapter
         {
             throw new Exception('please call setConfig first');
         }
-        $this->__link = new Mysqli($this->__host, $this->__user, $this->__pass, $this->__dbname, $this->__port, $this->__socket);
-        $this->__link->set_charset($this->__charset);
+        $this->__link = mysqli_init();
+        $this->__link->set_opt(MYSQLI_OPT_CONNECT_TIMEOUT, $this->__timeout);
+        //            $this->__link = new Mysqli($this->__host, $this->__user, $this->__pass, $this->__dbname, $this->__port, $this->__socket);
+        $this->__link->real_connect($this->__host, $this->__user, $this->__pass, $this->__dbname, $this->__port, $this->__socket);
+        if ($this->__link->errno == 0)
+        {
+            $this->__link->set_charset($this->__charset);
+        } else
+        {
+            ob_clean();
+            throw new Afx_Db_Exception($this->__link->error, $this->__link->errno);
+        }
     }
 
     private function __execute ($sql)
     {
         $this->__last_sql = $sql;
-        $this->__sqls[] = $sql;
+        //        $this->__sqls[] = $sql;
 //        $sql = $this->__link->real_escape_string($sql);
         $this->__result = $this->__link->query($sql);
         if ($this->__link->errno)
         {
             //            echo $this->__link->error;
+            $sqls = join("\n", $this->__sqls);
             if (self::$debug)
             {
                 echo $sql;
                 echo $this->__link->error;
             }
-            Afx_Logger::log($this->__link->error);
+            Afx_Logger::log("sql=" . $sql . "\n" . $this->__link->error);
         }
         $result = new Afx_Db_Mysqli_Result();
         $result->result = $this->__result;
+        $result->link = $this->__link;
         return $result;
          //       print_r($this->__result);
     }

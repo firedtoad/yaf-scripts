@@ -49,6 +49,7 @@ class Afx_Logger
         $debug = debug_backtrace();
         $time = date('Y-m-d h:i:s', time());
         $logmsg = array();
+        $logmsg[]=str_repeat('=', 80)."\n";
         unset($debug[0]);
         foreach ($debug as $value)
         {
@@ -84,6 +85,7 @@ class Afx_Logger
         {
             self::$_logfile = self::$_logfilename . ++ self::$_filenum;
         }
+        $logmsg[]="\n".str_repeat('=', 80)."\n";
         file_put_contents(self::$_logpath . '/' . self::$_logfile, join($logmsg, "") . "\n", FILE_APPEND | LOCK_EX);
     }
 }

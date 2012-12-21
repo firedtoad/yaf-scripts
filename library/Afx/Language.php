@@ -1,6 +1,6 @@
 <?php
 /**
- * @version $Id: Language.php 0 2012-11-08 10:55:01Z zhangwenhao $
+ * @version $Id: Language.php 96 2012-12-10 06:49:16Z zhangwenhao $
  * The Language package Encapsulation 
  * @author zhangwenhao 
  */
@@ -66,7 +66,7 @@ class Afx_Language
         if(!$reload&&file_exists($pack_file))
         {
             $this->__current_pack_name=$pack_name;
-            $tmp=require_once $pack_file;
+            $tmp=include $pack_file;
             //兼容 W1 语言包写法
             if(!is_array($tmp))
             {

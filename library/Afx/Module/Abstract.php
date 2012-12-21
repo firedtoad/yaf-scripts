@@ -20,12 +20,18 @@
  * The Module Class Impliment The Core ORM CRUD Operator
  * @author Afx team && firedtoad@gmail.com &&dietoad@gmail.com
  */
+/**
+ * @version $Id: Abstract.php 94 2012-12-10 03:39:40Z zhujinghe $
+ * @author zhangwenhao 
+ *
+ */
 abstract class Afx_Module_Abstract
 {
 
     public $_key = 'id';
 
     protected $_table_name = 't_dummy';
+
     /**
      * the from table
      * @var string
@@ -41,7 +47,7 @@ abstract class Afx_Module_Abstract
      *
      * @var Afx_Db_Adapter
      */
-    protected static $_adapter = NULL;
+    protected $_adapter = NULL;
 
     /**
      * store the Object fetch from database and compare for update
@@ -177,20 +183,20 @@ abstract class Afx_Module_Abstract
      */
     public function getAdapter ()
     {
-        if (self::$_adapter instanceof Afx_Db_Adapter)
+        if ($this->_adapter instanceof Afx_Db_Adapter)
         {
-            return self::$_adapter;
+            return $this->_adapter;
         } else
         {
-            throw new Afx_Db_Exception('数据库出错', '10061');
+            throw new Afx_Db_Exception('no database adapter', '404');
         }
     }
 
     public function quote ($v, $style = NULL)
     {
-        if (self::$_adapter instanceof Afx_Db_Adapter)
+        if ($this->_adapter instanceof Afx_Db_Adapter)
         {
-            return self::$_adapter->quote($v, $style);
+            return $this->_adapter->quote($v, $style);
         }
     }
 
@@ -223,9 +229,9 @@ abstract class Afx_Module_Abstract
      * Set the Db Adapter
      * @param Afx_Db_Adapter $_adapter
      */
-    public static function setAdapter ($_adapter)
+    public function setAdapter ($_adapter)
     {
-        self::$_adapter = $_adapter;
+        $this->_adapter = $_adapter;
     }
 
     /**
@@ -580,7 +586,7 @@ abstract class Afx_Module_Abstract
         $arr = $this->getAdapter()
             ->execute($sql)
             ->result();
-//            print_r($arr);
+        //            print_r($arr);
         if (isset($arr[0]) && is_array($arr[0]))
         {
             $this->_obj = self::fromArray($arr[0]);
@@ -703,19 +709,20 @@ abstract class Afx_Module_Abstract
         $this->_groupBy = NULL;
         $this->_random = NULL;
         $this->_order = NULL;
-        $this->_from='';
+        $this->_from = '';
         return $sql;
     }
+
     /**
      * 兼容CI框架
-     * @return Afx_Db_Mysqli_Result
+     * @return Afx_Db_Result
      */
-    public function get()
+    public function get ()
     {
-        $sql=$this->_generateSql();
+        $sql = $this->_generateSql();
         return $this->getAdapter()->execute($sql);
     }
-    
+
     /**
      * select the result from database use conditions
      * @param int $limit
@@ -832,7 +839,7 @@ abstract class Afx_Module_Abstract
         $this->_groupBy = NULL;
         $this->_random = NULL;
         $this->_order = NULL;
-        $this->_from='';
+        $this->_from = '';
         return $this->_result_array = $this->getAdapter()
             ->execute($sql)
             ->result();
@@ -1026,13 +1033,15 @@ abstract class Afx_Module_Abstract
 
     /**
      * @param array $arr the array to insert can be one or two demision
+     * @param string $table the table to insert into 
      * @param Boolean $master whether operator the master
      * @param Boolean $usetrans whether use transection
+     * @return Afx_Db_Result
      */
-    public function insert ($arr = array(),$table, $master = FALSE, $usetrans = FALSE)
+    public function insert ($arr = array(), $table, $master = FALSE, $usetrans = FALSE)
     {
-        $this->_doPartition();
-        if($table)$this->_from=$table;
+        $ret = TRUE;
+        if ($table) $this->_from = $table;
         //    	Afx_Debug_Helper::print_r($arr);
         //        echo sizeof($arr),"<br/>";
         if (is_array($arr) && count($arr) > 0)
@@ -1057,7 +1066,7 @@ abstract class Afx_Module_Abstract
                 $sql = substr($sql, 0, $lastIndex);
                 $sql .= ')';
                 //                echo '<br>';
-                return $this->getAdapter()->execute($sql);
+                $ret = $this->getAdapter()->execute($sql);
             }
             if (isset($arr[0]))
             {
@@ -1093,11 +1102,88 @@ abstract class Afx_Module_Abstract
                 }
                 if ($sql)
                 {
-                    $this->getAdapter()->execute($sql);
+                    $ret = $this->getAdapter()->execute($sql);
                 }
             }
         }
-        $this->_from='';
+        $this->_from = '';
+        return $ret;
+    }
+
+    /**
+     * @param array $arr the array to insert can be one or two demision
+     * @param string $table the table to replace into 
+     * @param Boolean $master whether operator the master
+     * @param Boolean $usetrans whether use transection
+     * @return Afx_Db_Result
+     */
+    public function replace ($arr = array(), $table, $master = FALSE, $usetrans = FALSE)
+    {
+        $ret = TRUE;
+        if ($table) $this->_from = $table;
+        if (is_array($arr) && count($arr) > 0)
+        {
+            if (! isset($arr[0]))
+            {
+                $sql = 'REPLACE INTO ' . $this->_from . ' (';
+                foreach (array_keys($arr) as $k)
+                {
+                    if ($k == 'id') continue;
+                    $sql .= '`' . $k . '`,';
+                }
+                $lastIndex = strrpos($sql, ',');
+                $sql = substr($sql, 0, $lastIndex);
+                $sql .= ') VALUES (';
+                foreach ($arr as $k => $v)
+                {
+                    if ($k == 'id') continue;
+                    $sql .= $this->_processValue($v) . ',';
+                }
+                $lastIndex = strrpos($sql, ',');
+                $sql = substr($sql, 0, $lastIndex);
+                $sql .= ')';
+                $ret = $this->getAdapter()->execute($sql);
+            }
+            if (isset($arr[0]))
+            {
+                $sql = '';
+                if (is_array($arr[0]) && count($arr[0]) > 0)
+                {
+                    $sql = 'REPLACE INTO ' . $this->_from . ' (';
+                    foreach (array_keys($arr[0]) as $k)
+                    {
+                        if ($k == 'id') continue;
+                        $sql .= '`' . $k . '`,';
+                    }
+                    $lastIndex = strrpos($sql, ',');
+                    $sql = substr($sql, 0, $lastIndex);
+                    $sql .= ') VALUES';
+                    foreach ($arr as $k => $v)
+                    {
+                        if (is_array($v) && count($v) > 0)
+                        {
+                            $sql .= ' (';
+                            foreach ($v as $k1 => $v1)
+                            {
+                                if ($k1 == 'id') continue;
+                                $sql .= $this->_processValue($v1) . ',';
+                            }
+                            $lastIndex = strrpos($sql, ',');
+                            $sql = substr($sql, 0, $lastIndex);
+                            $sql .= ' ),';
+                        }
+                    }
+                    $lastIndex = strrpos($sql, ',');
+                    $sql = substr($sql, 0, $lastIndex);
+                }
+                if ($sql)
+                {
+                    $ret = $this->getAdapter()->execute($sql);
+                }
+            }
+        }
+        $this->_from = '';
+        return $ret;
     }
 
     public function expain ()
@@ -1115,30 +1201,29 @@ abstract class Afx_Module_Abstract
      */
     private function _processValue ($v)
     {
-        //		$ret = '';
-        //		echo gettype($v)=='NULL',"<br/>";
-        //        switch (strtolower(gettype($v)))
-        //        {
-        //            case 'string':
-        //                if ($v === 'IS' || $v === 'NULL') return '  ' . $v;
-        //                $ret = $this->quote($v, PDO::PARAM_STR);
-        //                break;
-        //            case 'integer':
-        //                $ret = $this->quote($v);
-        //                break;
-        //            case 'double':
-        //                $ret = $this->quote($v);
-        //                break;
-        //            case 'boolean':
-        //                $ret = $this->quote($v, PDO::PARAM_BOOL);
-        //                break;
-        //            case 'null':
-        //                $ret = $this->quote('0', PDO::PARAM_STR);
-        //                break;
-        //            default:
-        //                break;
-        //        }
-        $ret = $this->quote($v);
+		$ret = '';
+        switch (strtolower(gettype($v)))
+        {
+            case 'string':
+                if ($v === 'IS' || $v === 'NULL') return '  ' . $v;
+                $ret = $this->quote($v);
+                break;
+            case 'integer':
+                $ret = $this->quote($v);
+                break;
+            case 'double':
+                $ret = $this->quote($v);
+                break;
+            case 'boolean':
+                $ret = $this->quote($v);
+                break;
+            case 'null':
+                $ret = $this->quote('0');
+                break;
+            default:
+                break;
+        }
+//        $ret = $this->quote($v);
         return $ret;
     }
 
@@ -1157,6 +1242,15 @@ abstract class Afx_Module_Abstract
             $str = "( $inArr )";
         }
         return $str;
+    }
+
+    protected function _init ()
+    {
+        $config = Yaf_Registry::get('config');
+        $adapter = Afx_Db_Factory::DbDriver($config['mysql']['driver'],TRUE);
+        $adapter->setConfig($config['mysql']);
+        $this->setAdapter($adapter);
+        
     }
 
     /**
