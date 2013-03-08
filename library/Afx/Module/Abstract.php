@@ -21,7 +21,7 @@
  * @author Afx team && firedtoad@gmail.com &&dietoad@gmail.com
  */
 /**
- * @version $Id: Abstract.php 94 2012-12-10 03:39:40Z zhujinghe $
+ * @version $Id: Abstract.php 259 2013-03-05 08:29:26Z zhangwenhao $
  * @author zhangwenhao 
  *
  */
@@ -471,13 +471,14 @@ abstract class Afx_Module_Abstract
      */
     public function delete ($id = NULL)
     {
-        $this->_doPartition();
-        $rid = $id ? ($id >= 0 ? $id : NULL) : $this->_obj->id ? ($this->_obj->id >= 0 ? $this->_obj->id : NULL) : NULL;
-        if (! $rid)
+//        $this->_doPartition();
+        if ($id)
         {
-            return FALSE;
+            $this->where('id',$id);
+//            return FALSE;
         }
-        $sql = sprintf('DELETE  FROM ' . $this->_from . ' WHERE `id`=%d', $rid);
+        $sql=$this->_generateSql('DELETE ');
+        //$sql = sprintf('DELETE  FROM ' . $this->_from . ' WHERE `id`=%d', $rid);
         return $this->getAdapter()->execute($sql);
     }
 
@@ -600,10 +601,10 @@ abstract class Afx_Module_Abstract
      * generate the sql string use the conditions
      * @return string
      */
-    private function _generateSql ()
+    private function _generateSql ($prefix='SELECT ')
     {
         $this->_doPartition();
-        $sql = 'SELECT ';
+        $sql = $prefix;
         if ($this->_distinct)
         {
             $sql .= 'DISTINCT ';
@@ -613,7 +614,7 @@ abstract class Afx_Module_Abstract
         {
             if (! is_array($this->_field) || count($this->_field) == 0)
             {
-                $sql .= "*";
+                $prefix!=='DELETE '&&$sql .= "*";
             } elseif (count($this->_field))
             {
                 foreach ($this->_field as $k => $v)
@@ -695,7 +696,8 @@ abstract class Afx_Module_Abstract
                 }
             if ($this->_limit)
             {
-                $sql .= " limit " . $this->_offset . "," . $this->_limit;
+                $prefix!=='DELETE '&&$sql .= " limit " . $this->_offset . "," . $this->_limit;
+                $prefix==='DELETE '&&$sql .=' limit ' .$this->_limit; 
             }
         }
         $this->_where = array();
@@ -1046,7 +1048,8 @@ abstract class Afx_Module_Abstract
         //        echo sizeof($arr),"<br/>";
         if (is_array($arr) && count($arr) > 0)
         {
-            if (! isset($arr[0]))
+            $first=current($arr);
+            if (!is_array($first))
             {
                 $sql = 'INSERT INTO ' . $this->_from . ' (';
                 foreach (array_keys($arr) as $k)
@@ -1068,13 +1071,13 @@ abstract class Afx_Module_Abstract
                 //                echo '<br>';
                 $ret = $this->getAdapter()->execute($sql);
             }
-            if (isset($arr[0]))
+            if (is_array($first))
             {
                 $sql = '';
-                if (is_array($arr[0]) && count($arr[0]) > 0)
+                if (is_array($first) && count($first) > 0)
                 {
                     $sql = 'INSERT INTO ' . $this->_from . ' (';
-                    foreach (array_keys($arr[0]) as $k)
+                    foreach (array_keys($first) as $k)
                     {
                         if ($k == 'id') continue;
                         $sql .= '`' . $k . '`,';
@@ -1123,12 +1126,13 @@ abstract class Afx_Module_Abstract
         if ($table) $this->_from = $table;
         if (is_array($arr) && count($arr) > 0)
         {
-            if (! isset($arr[0]))
+            $first=current($arr);
+            if (!is_array($first))
             {
                 $sql = 'REPLACE INTO ' . $this->_from . ' (';
                 foreach (array_keys($arr) as $k)
                 {
-                    if ($k == 'id') continue;
+//                     if ($k == 'id') continue;
                     $sql .= '`' . $k . '`,';
                 }
                 $lastIndex = strrpos($sql, ',');
@@ -1136,7 +1140,7 @@ abstract class Afx_Module_Abstract
                 $sql .= ') VALUES (';
                 foreach ($arr as $k => $v)
                 {
-                    if ($k == 'id') continue;
+//                     if ($k == 'id') continue;
                     $sql .= $this->_processValue($v) . ',';
                 }
                 $lastIndex = strrpos($sql, ',');
@@ -1144,15 +1148,15 @@ abstract class Afx_Module_Abstract
                 $sql .= ')';
                 $ret = $this->getAdapter()->execute($sql);
             }
-            if (isset($arr[0]))
+            if (is_array($first))
             {
                 $sql = '';
-                if (is_array($arr[0]) && count($arr[0]) > 0)
+                if (is_array($first) && count($first) > 0)
                 {
                     $sql = 'REPLACE INTO ' . $this->_from . ' (';
-                    foreach (array_keys($arr[0]) as $k)
+                    foreach (array_keys($first) as $k)
                     {
-                        if ($k == 'id') continue;
+//                         if ($k == 'id') continue;
                         $sql .= '`' . $k . '`,';
                     }
                     $lastIndex = strrpos($sql, ',');
@@ -1165,7 +1169,7 @@ abstract class Afx_Module_Abstract
                             $sql .= ' (';
                             foreach ($v as $k1 => $v1)
                             {
-                                if ($k1 == 'id') continue;
+//                                 if ($k1 == 'id') continue;
                                 $sql .= $this->_processValue($v1) . ',';
                             }
                             $lastIndex = strrpos($sql, ',');
@@ -1276,7 +1280,7 @@ abstract class Afx_Module_Abstract
         $ret = $this->getAdapter()
             ->execute($sql)
             ->row();
-        return isset($ret['0']['COUNT(*)']) ? $ret['0']['COUNT(*)'] : 0;
+        return isset($ret['COUNT(1)']) ? $ret['COUNT(1)'] : 0;
     }
 
     /**

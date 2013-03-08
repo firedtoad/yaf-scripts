@@ -1,0 +1,34 @@
+<?php
+/*
+ * @version $Id: Xml.php 94 2012-12-10 03:39:40Z zhujinghe $
+ */
+
+/**
+ *  This file is part of amfPHP
+ *
+ * LICENSE
+ *
+ * This source file is subject to the license that is bundled
+ * with this package in the file license.txt.
+ * @package Afx_Amf
+ */
+
+/**
+ * Amf xml (not the AS3/AMF3 XMLDocument) will be converted to and from this class.
+ * PHP has many libs to manipulate XML, and it is not up to amfPHP to choose which one to use. Furthermore, AS3 has 2 XML types, XML and and XMLDocument.
+ * So amfPHP just wraps the string data in these types, and iut is up to the user to parse the contained string data
+ *
+ * @package Afx_Amf_Types
+ * @author Ariel Sommeria-klein
+ */
+
+class Afx_Amf_Types_Xml
+{
+	public $data;
+
+	public function Afx_Amf_Types_Xml($data)
+	{
+		$this->data = $data;
+	}
+}
+?>

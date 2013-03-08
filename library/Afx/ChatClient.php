@@ -1,6 +1,6 @@
 <?php
 /*
- * @version $Id: ChatClient.php 94 2012-12-10 03:39:40Z zhujinghe $
+ * @version $Id: ChatClient.php 276 2013-03-08 02:42:10Z zhangwenhao $
  */
 /**
  * 聊天客户端
@@ -262,7 +262,7 @@ class Afx_ChatClient
 
     /**
      * 创建队伍
-     * tean:array('teamid'=>1234)
+     * team:array('teamid'=>1234)
      * @param array $team
      * @return boolean
      */
@@ -407,6 +407,8 @@ class Afx_ChatClient
             self::$msgs[$ret['c']] = $data;
             if (isset($ret[$key]) && $ret[$key] == $value)
             {
+                return true;
+            }else{
                 return true;
             }
         }

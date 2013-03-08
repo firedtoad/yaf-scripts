@@ -1,6 +1,6 @@
 <?php
 /**
- * @version $Id: Queue.php 94 2012-12-10 03:39:40Z zhujinghe $
+ * @version $Id: Queue.php 169 2012-12-25 06:10:10Z zhangwenhao $
  * The Queue Class Encapsulation with Redis in background  
  * @author zhangwenhao 
  */
@@ -57,7 +57,24 @@ class Afx_Queue
         }
         return self::$__instance;
     }
-
+    /**
+     * get the queue length
+     * @param string $key
+     */
+    public function length($key)
+    {
+        return $this->__cache->length($key);
+    }
+     /**
+     * remove the specific value in the list
+     * @param string $key
+     * @param mixed $value
+     */
+    public function remove($key,$value)
+    {
+        return $this->__cache->remove($key, $value, 1);
+    }
+    
     /**
      * add a key to  list
      * @param string $key

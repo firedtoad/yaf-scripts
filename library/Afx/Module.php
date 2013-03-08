@@ -38,6 +38,11 @@ class Afx_Module extends Afx_Module_Abstract
         $this->_tablename = $tablename;
         $this->_from = $tablename;
     }
+    /**
+     * @param boolean $create
+     * @param string $database
+     * @return Afx_Module_Abstract
+     */
     public static function Instance($create=FALSE,$database=NULL)
     {
         $adapter=NULL;

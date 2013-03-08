@@ -1,6 +1,6 @@
 <?php
 /**
- * @version $Id: Config.php 118 2012-12-12 04:01:40Z cfc4n $
+ * @version $Id: Config.php 195 2013-01-03 08:28:51Z zhangwenhao $
  * The Afx_Config Class Encapsulation
  * @author zhangwenhao 
  */
@@ -72,9 +72,11 @@ class Afx_Config extends Afx_Module_Abstract
                 ->limit(0)
                 ->get()
                 ->result();
+                 
             if ($result)
             {
                 $result = $this->__filter($result, $index_name);
+               
                 $this->__saveCacheData($cache_name, $result, $index_name);
             }
         }
@@ -134,20 +136,20 @@ class Afx_Config extends Afx_Module_Abstract
                 $hash = self::times33($index) % self::$__seg;
                 $cache = self::$__cache->get($cache_name . $hash);
             }
+            
         } else
         {
             $cache = array();
             $keys = self::$__cache->get($cache_name);
+           
             if ($keys)
             {
-                $first = array_shift($keys);
+                $first = current($keys);
                 if ($keys && ! is_null($first) && is_array($first))
                 {
-                    array_push($keys, $first);
                     $cache = $keys;
                 } else
                 {
-                    array_push($keys, $first);
                     if (is_array($keys) && count($keys))
                     {
                         foreach ($keys as $k)
@@ -159,6 +161,7 @@ class Afx_Config extends Afx_Module_Abstract
                 }
             }
         }
+         
         return $index ? (isset($cache[$index]) ? $cache[$index] : '') : $cache;
     }
 
