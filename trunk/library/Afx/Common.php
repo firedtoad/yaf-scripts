@@ -3,6 +3,24 @@ class Afx_Common
 {
 
     /**
+     * 检查数组是否为标准二维数组
+     * @param array $a
+     * @return boolean
+     */
+    public static function isStandard2DArray ($a = array())
+    {
+        $count = count($a);
+        if ($count > 0)
+        {
+            $first = current($a);
+            $count_all = count($a, COUNT_RECURSIVE);
+            $first_len = count($first);
+            return $count_all - ($count * $first_len + $count) == 0;
+        }
+        return FALSE;
+    }
+
+    /**
      * 缓存更新前对比版本号
      * @param array $new_cache
      * @param array $old_cache
@@ -26,10 +44,11 @@ class Afx_Common
                             $modify = TRUE;
                             $value['current_version'] = isset($value['current_version']) ? ++ $value['current_version'] : 1;
                         }
-                    }else{
-                        $value['ver']=0;
-                        $value['current_version']=1;
-                        $add=TRUE;
+                    } else
+                    {
+                        $value['ver'] = 0;
+                        $value['current_version'] = 1;
+                        $add = TRUE;
                     }
                 }
             } else

@@ -1,8 +1,4 @@
 <?php
-/*
- * @version $Id: Constants.php 94 2012-12-10 03:39:40Z zhujinghe $
- */
-
 /**
  *  This file is part of amfPHP
  *

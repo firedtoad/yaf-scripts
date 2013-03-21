@@ -14,6 +14,7 @@ class Afx_Cache_Memcached_Adapter implements Afx_Cache_Adapter
     private $__config;
 
     private $__dump_keys = array();
+
     /**
      * 
      * Afx_Cache_Memcached_Adapter
@@ -36,6 +37,10 @@ class Afx_Cache_Memcached_Adapter implements Afx_Cache_Adapter
             self::$__instance = new self();
         }
         return self::$__instance;
+    }
+
+    public function auth ($pass)
+    {
     }
 
     /**
@@ -79,7 +84,7 @@ class Afx_Cache_Memcached_Adapter implements Afx_Cache_Adapter
         foreach ($this->__servers as $value)
         {
             //            $mem->connect($value['host'],$value['port'],$value['timeout']);
-            $mem->addServer($value['host'], $value['port'],  $value['weight']);
+            $mem->addServer($value['host'], $value['port'], $value['weight']);
             $this->__dump_keys[] = $value['host'] . ':' . $value['port'];
         }
         $this->__mem = $mem;
@@ -98,14 +103,16 @@ class Afx_Cache_Memcached_Adapter implements Afx_Cache_Adapter
          //        return $this;
     }
 
-    public function remove($key, $value, $count)
+    public function remove ($key, $value, $count)
     {
-          return TRUE;
+        return TRUE;
     }
-    public function length($key)
+
+    public function length ($key)
     {
         return 0;
     }
+
     /**
      * delete the key in cache
      * @param string $key
@@ -153,10 +160,12 @@ class Afx_Cache_Memcached_Adapter implements Afx_Cache_Adapter
         return $this->__mem->replace($key, $value, $flag, $expire);
          //        return $this;
     }
-    public function exists($key)
+
+    public function exists ($key)
     {
-         return $this->__mem->get($key);
+        return $this->__mem->get($key);
     }
+
     /**
      * update the cache value with the specific key
      * @param $key 
@@ -167,10 +176,11 @@ class Afx_Cache_Memcached_Adapter implements Afx_Cache_Adapter
      */
     public function cas ($key, $value, $expire = 3600, $flag = MEMCACHE_COMPRESSED)
     {
-        $cas=NULL;
-        return $this->__mem->cas($cas,$key, $value, $flag, $expire);
+        $cas = NULL;
+        return $this->__mem->cas($cas, $key, $value, $flag, $expire);
          //        return $this;
     }
+
     /**
      * add a value to the cache use the key
      * @param $key 

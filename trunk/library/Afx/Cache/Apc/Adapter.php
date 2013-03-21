@@ -30,6 +30,11 @@ class Afx_Cache_Apc_Adapter implements Afx_Cache_Adapter
         return 0;
     }
 
+    public function auth($pass)
+    {
+        
+    }
+    
     public function add ($key, $value, $expire = 0)
     {
         return apc_add($key, $value, $expire);

@@ -1,8 +1,4 @@
 <?php
-/*
- * @version $Id: Serializer.php 94 2012-12-10 03:39:40Z zhujinghe $
- */
-
 
 /**
  *  This file is part of amfPHP
@@ -19,19 +15,19 @@
  * the actionscript equivalent via Amf.  The main method of the serializer
  * is the serialize method which takes and AmfObject as it's argument
  * and builds the resulting Amf Message.
- * TODO spit into 2 classes, one for Amf0 , one for Amf3 or maybe more.
  *
  * @package Afx_Amf
  */
-class Afx_Amf_Serializer {
+class Afx_Amf_Serializer implements Afx_Amf_Common_ISerializer {
 
     /**
      *
      * @var String the output stream
      */
     protected $outBuffer;
+
     /**
-     *
+     * packet
      * @var Afx_Amf_Packet
      */
     protected $packet;
@@ -39,19 +35,23 @@ class Afx_Amf_Serializer {
     /**
      * the maximum amount of objects stored for reference
      */
+
     const MAX_STORED_OBJECTS = 1024;
+
     /**
      *
      * used for Amf0 references
      * @var array
      */
     protected $Amf0StoredObjects;
+
     /**
      *
      * used for Amf3 references
      * @var array
      */
     protected $storedObjects;
+
     /**
      * amf3 references to strings
      * @var array
@@ -65,30 +65,13 @@ class Afx_Amf_Serializer {
     protected $className2TraitsInfo;
 
     /**
-     *
-     * @param <Afx_Amf_Packet> $packet
+     * converts from php object to binary
+     * @param Afx_Amf_Packet $data
      */
-    public function __construct(Afx_Amf_Packet $packet) {
-        $this->packet = $packet;
+    public function serialize($data) {
+        $this->packet = $data;
         $this->resetReferences();
-    }
-    
-    /**
-     * initialize reference arrays and counters. Call before writing a body or a header, as the indices are local to each message body or header
-     */
-    protected function resetReferences(){
-        $this->Amf0StoredObjects = array();
-        $this->storedStrings = array();
-        $this->storedObjects = array();
-        $this->className2TraitsInfo = array();
 
-    }
-
-    /**
-     * serializes the Packet passed in the constructor
-     * TODO clean up the mess with the temp buffers. A.S.
-     */
-    public function serialize() {
         $this->writeInt(0); //  write the version (always 0)
         $count = count($this->packet->headers);
         $this->writeInt($count); // write header count
@@ -104,6 +87,7 @@ class Afx_Amf_Serializer {
             }
             $tempBuf = $this->outBuffer;
             $this->outBuffer = '';
+
             $this->writeData($header->data);
             $serializedHeader = $this->outBuffer;
             $this->outBuffer = $tempBuf;
@@ -116,7 +100,6 @@ class Afx_Amf_Serializer {
             $this->resetReferences();
             //write body.
             $message = $this->packet->messages[$i];
-            $this->currentMessage = & $message;
             $this->writeUTF($message->targetUri);
             $this->writeUTF($message->responseUri);
             //save the current buffer, and flush it to write the Message
@@ -132,6 +115,20 @@ class Afx_Amf_Serializer {
         return $this->outBuffer;
     }
 
+    /**
+     * initialize reference arrays and counters. Call before writing a body or a header, as the indices are local to each message body or header
+     */
+    protected function resetReferences() {
+        $this->Amf0StoredObjects = array();
+        $this->storedStrings = array();
+        $this->storedObjects = array();
+        $this->className2TraitsInfo = array();
+    }
+
+    /**
+     * get serialized data output
+     * @return string
+     */
     public function getOutput() {
         return $this->outBuffer;
     }
@@ -239,7 +236,7 @@ class Afx_Amf_Serializer {
     /**
      * writeXML writes the xml code (0x0F) and the XML string to the output stream
      * Note: strips whitespace
-     * @param string $d The XML string
+     * @param Afx_Amf_Types_Xml $d
      */
     protected function writeXML(Afx_Amf_Types_Xml $d) {
         if (!$this->handleReference($d->data, $this->Amf0StoredObjects)) {
@@ -249,13 +246,13 @@ class Afx_Amf_Serializer {
     }
 
     /**
-     * writeData writes the date code (0x0B) and the date value (milliseconds from 1 January 1970) to the output stream, along with an empty unsupported timezone
+     * writeDate writes the date code (0x0B) and the date value (milliseconds from 1 January 1970) to the output stream, along with an empty unsupported timezone
      *
      * @param Afx_Amf_Types_Date $d The date value
      */
     protected function writeDate(Afx_Amf_Types_Date $d) {
-        $this->writeByte(0x0B); 
-        $this->writeDouble($d->timeStamp); 
+        $this->writeByte(0x0B);
+        $this->writeDouble($d->timeStamp);
         $this->writeInt(0);
     }
 
@@ -267,7 +264,7 @@ class Afx_Amf_Serializer {
      */
     protected function writeNumber($d) {
         $this->writeByte(0); // write the number code
-        $this->writeDouble(floatval($d)); // write  the number as a double
+        $this->writeDouble($d); // write  the number as a double
     }
 
     /**
@@ -304,8 +301,9 @@ class Afx_Amf_Serializer {
         //Because if the array contains only primitive values,
         //Then === will say that the two arrays are strictly equal
         //if they contain the same values, even if they are really distinct
-        if (count($this->Amf0StoredObjects) <= self::MAX_STORED_OBJECTS) {
-            $this->Amf0StoredObjects[] = & $d;
+        $count = count($this->Amf0StoredObjects);
+        if ($count <= self::MAX_STORED_OBJECTS) {
+            $this->Amf0StoredObjects[$count] = & $d;
         }
 
         $numeric = array(); // holder to store the numeric keys
@@ -347,23 +345,13 @@ class Afx_Amf_Serializer {
         }
     }
 
+    /**
+     * write reference
+     * @param int $num
+     */
     protected function writeReference($num) {
         $this->writeByte(0x07);
         $this->writeInt($num);
-    }
-
-    /**
-     * Write a plain numeric array without anything fancy
-     */
-    protected function writePlainArray($d) {
-        if (!$this->writeReferenceIfExists($d)) {
-            $num_count = count($d);
-            $this->writeByte(10); // write  the mixed array code
-            $this->writeLong($num_count); // write  the count of items in the array
-            for ($i = 0; $i < $num_count; $i++) { // write all of the array elements
-                $this->writeData($d[$i]);
-            }
-        }
     }
 
     /**
@@ -390,7 +378,6 @@ class Afx_Amf_Serializer {
     protected function writeAnonymousObject($d) {
         if (!$this->handleReference($d, $this->Amf0StoredObjects)) {
             $this->writeByte(3);
-            $objVars = (array) $d;
             foreach ($d as $key => $data) { // loop over each element
                 if ($key[0] != "\0") {
                     $this->writeUTF($key);  // write the name of the object
@@ -417,7 +404,7 @@ class Afx_Amf_Serializer {
         $explicitTypeField = Afx_Amf_Constants::FIELD_EXPLICIT_TYPE;
         $className = $d->$explicitTypeField;
         if (!$className) {
-            throw new Afx_Exception(Afx_Amf_Constants::FIELD_EXPLICIT_TYPE . ' not found on a object that is to be sent as typed. ' . print_r($d, true));
+            throw new Afx_Amf_Exception(Afx_Amf_Constants::FIELD_EXPLICIT_TYPE . ' not found on a object that is to be sent as typed. ' . print_r($d, true));
         }
         unset($d->$explicitTypeField);
         $this->writeUTF($className); // write the class name
@@ -464,7 +451,7 @@ class Afx_Amf_Serializer {
         } elseif (Afx_Amf_Util::is_date($d)) { // date
             $this->writeDate($d);
             return;
-        } elseif (Afx_Amf_Util::is_Xml ($d)) { // Xml (note, no XmlDoc in AMF0)
+        } elseif (Afx_Amf_Util::is_Xml($d)) { // Xml (note, no XmlDoc in AMF0)
             $this->writeXML($d);
             return;
         } elseif (is_object($d)) {
@@ -472,12 +459,12 @@ class Afx_Amf_Serializer {
             if (isset($d->$explicitTypeField)) {
                 $this->writeTypedObject($d);
                 return;
-            }else{
+            } else {
                 $this->writeAnonymousObject($d);
                 return;
             }
         }
-        throw new Afx_Exception("couldn't write data " . print_r($d));
+        throw new Afx_Amf_Exception("couldn't write data " . print_r($d));
     }
 
     /*     * ******************************************************************************
@@ -485,11 +472,9 @@ class Afx_Amf_Serializer {
      * ***************************************************************************** */
 
     /**
-     * @todo Is the reference still needed? PHP4 needed it for objects, but PHP5 always
-     * passes objects by reference. And PHP5 uses a copy-on-write approach, so that all
-     * values are passed as 'reference', in case no changes take place.
-     *
+     * write amf 3 data
      * @todo no type markers ("\6', for example) in this method!
+     * @param mixed $d
      */
     protected function writeAmf3Data($d) {
         if (is_int($d)) { //int
@@ -519,12 +504,12 @@ class Afx_Amf_Serializer {
             $this->writeAmf3Array($d);
             return;
         } elseif (Afx_Amf_Util::is_byteArray($d)) { //byte array
-            $this->writeAmf3ByteArray($d->data);
+            $this->writeAmf3ByteArray($d);
             return;
-        } elseif (Afx_Amf_Util::is_Xml ($d)) { // Xml
+        } elseif (Afx_Amf_Util::is_Xml($d)) { // Xml
             $this->writeAmf3Xml($d);
             return;
-        } elseif (Afx_Amf_Util::is_XmlDocument ($d)) { // XmlDoc
+        } elseif (Afx_Amf_Util::is_XmlDocument($d)) { // XmlDoc
             $this->writeAmf3XmlDocument($d);
             return;
         } elseif (is_object($d)) {
@@ -532,7 +517,7 @@ class Afx_Amf_Serializer {
             if (isset($d->$explicitTypeField)) {
                 $this->writeAmf3TypedObject($d);
                 return;
-            }else{
+            } else {
                 $this->writeAmf3AnonymousObject($d);
                 return;
             }
@@ -602,48 +587,52 @@ class Afx_Amf_Serializer {
             //Write 0x01 to specify the empty string ('UTF-8-empty')
             $this->outBuffer .= "\1";
             return;
-        } 
+        }
 
         if (!$this->handleReference($d, $this->storedStrings)) {
             $this->writeAmf3Int(strlen($d) << 1 | 1); // U29S-value
             $this->outBuffer .= $d;
         }
-
     }
-    
+
     /**
      *  handles writing an anoynous object (stdClass)
      *  can also be a reference
      * Also creates a bogus traits entry, as even an anonymous object has traits. In this way a reference to a class trait will have the right id.
+     * @todo it would seem that to create only one traits entry for an anonymous object would be the way to go. this 
+     * however messes things up in both Flash and Charles Proxy. For testing call discovery service using AMF. investigate.
      *
      * @param stdClass $d The php object to write
      * @param doReference Boolean This is used by writeAmf3Array, where the reference has already been taken care of, 
      * so there this method is called with false
      */
-    protected function writeAmf3AnonymousObject($d, $doReference = true){
+    protected function writeAmf3AnonymousObject($d, $doReference = true) {
 
-            //Write the object tag
-            $this->outBuffer .= "\12";
-            if ($doReference && $this->handleReference($d, $this->storedObjects)) {
-                return;
-            }            
-            //U29O-traits : 1011.
-            $this->writeAmf3Int(0xB);
-            //bogus class traits entry
-            $this->className2TraitsInfo[] = array();
-            
-            //write empty string as class name for anonymous object
-            $this->writeAmf3String('');
+        //Write the object tag
+        $this->outBuffer .= "\12";
+        if ($doReference && $this->handleReference($d, $this->storedObjects)) {
+            return;
+        }
 
-            foreach($d as $key => $data){
-                    $this->writeAmf3String($key);
-                    $this->writeAmf3Data($data);
-            }
-            //empty string, marks end of dynamic members
-            $this->outBuffer .= "\1";                     
-            
+        //bogus class traits entry
+        $this->className2TraitsInfo[] = array();
+
+        //anonymous object. So type this as a dynamic object with no sealed members.
+        //U29O-traits : 1011.
+        $this->writeAmf3Int(0xB);
+        //no class name. empty string for anonymous object
+        $this->writeAmf3String("");
+        //name/value pairs for dynamic properties
+        foreach ($d as $key => $value) {
+            $this->writeAmf3String($key);
+            $this->writeAmf3Data($value);
+        }
+        //empty string, marks end of dynamic members
+        $this->outBuffer .= "\1";
     }
+
     /**
+     * write amf3 array
      * @param array $d
      */
     protected function writeAmf3Array(array $d) {
@@ -651,10 +640,11 @@ class Afx_Amf_Serializer {
         //Because if the array contains only primitive values,
         //Then === will say that the two arrays are strictly equal
         //if they contain the same values, even if they are really distinct
-        if (count($this->storedObjects) <= self::MAX_STORED_OBJECTS) {
-            $this->storedObjects[] = & $d;
+        $count = count($this->storedObjects);
+        if ($count <= self::MAX_STORED_OBJECTS) {
+            $this->storedObjects[$count] = & $d;
         }
-        
+
         $numeric = array(); // holder to store the numeric keys >= 0
         $string = array(); // holder to store the string keys; actually, non-integer or integer < 0 are stored
         $len = count($d); // get the total number of entries for the array
@@ -674,14 +664,10 @@ class Afx_Amf_Serializer {
         if (
                 ($str_count > 0 && $num_count == 0) || // Only strings or negative integer keys are present.
                 ($num_count > 0 && $largestKey != $num_count - 1) // Non-negative integer keys are present, but the array is not 'dense' (it has gaps).
-        ) { 
-           //// this is a mixed array. write it as an anonymous/dynamic object  with no sealed members
+        ) {
+            //// this is a mixed array. write it as an anonymous/dynamic object  with no sealed members
             $this->writeAmf3AnonymousObject($numeric + $string, false);
-  
-            
         } else { // this is just an array
-            
-
             $this->outBuffer .= "\11";
             $num_count = count($numeric);
             $handle = $num_count * 2 + 1;
@@ -698,7 +684,6 @@ class Afx_Amf_Serializer {
             }
         }
     }
-
 
     /**
      * Return the serialisation of the given integer (Amf3).
@@ -725,25 +710,29 @@ class Afx_Amf_Serializer {
 
         if ($d < 0x80) {
             return
-            chr($d);
+                    chr($d);
         } elseif ($d < 0x4000) {
             return
-            chr($d >> 7 & 0x7f | 0x80) .
-            chr($d & 0x7f);
+                    chr($d >> 7 & 0x7f | 0x80) .
+                    chr($d & 0x7f);
         } elseif ($d < 0x200000) {
             return
-            chr($d >> 14 & 0x7f | 0x80) .
-            chr($d >> 7 & 0x7f | 0x80) .
-            chr($d & 0x7f);
+                    chr($d >> 14 & 0x7f | 0x80) .
+                    chr($d >> 7 & 0x7f | 0x80) .
+                    chr($d & 0x7f);
         } else {
             return
-            chr($d >> 22 & 0x7f | 0x80) .
-            chr($d >> 15 & 0x7f | 0x80) .
-            chr($d >> 8 & 0x7f | 0x80) .
-            chr($d & 0xff);
+                    chr($d >> 22 & 0x7f | 0x80) .
+                    chr($d >> 15 & 0x7f | 0x80) .
+                    chr($d >> 8 & 0x7f | 0x80) .
+                    chr($d & 0xff);
         }
     }
 
+    /**
+     * write Amf3 Number
+     * @param number $d
+     */
     protected function writeAmf3Number($d) {
         if (is_int($d) && $d >= -268435456 && $d <= 268435455) {//check valid range for 29bits
             $this->outBuffer .= "\4";
@@ -755,31 +744,47 @@ class Afx_Amf_Serializer {
         }
     }
 
+    /**
+     * write Afx_Amf_Types_Xml in amf3
+     * @param Afx_Amf_Types_Xml $d
+     */
     protected function writeAmf3Xml(Afx_Amf_Types_Xml $d) {
         $d = preg_replace('/\>(\n|\r|\r\n| |\t)*\</', '><', trim($d->data));
         $this->writeByte(0x0B);
         $this->writeAmf3String($d);
     }
 
+    /**
+     * write Afx_Amf_Types_XmlDocument in amf3
+     * @param Afx_Amf_Types_XmlDocument $d
+     */
     protected function writeAmf3XmlDocument(Afx_Amf_Types_XmlDocument $d) {
         $d = preg_replace('/\>(\n|\r|\r\n| |\t)*\</', '><', trim($d->data));
         $this->writeByte(0x07);
         $this->writeAmf3String($d);
     }
 
+    /**
+     * write Afx_Amf_Types_Date in amf 3
+     * @param Afx_Amf_Types_Date $d
+     */
     protected function writeAmf3Date(Afx_Amf_Types_Date $d) {
         $this->writeByte(0x08);
         $this->writeAmf3Int(1);
         $this->writeDouble($d->timeStamp);
     }
 
-
-    protected function writeAmf3ByteArray($d) {
+    /**
+     * write Afx_Amf_Types_ByteArray in amf3
+     * @param Afx_Amf_Types_ByteArray $d
+     */
+    protected function writeAmf3ByteArray(Afx_Amf_Types_ByteArray $d) {
         $this->writeByte(0x0C);
-        if (!$this->handleReference($d, $this->storedObjects)) {
-            $obj_length = strlen($d);
+        $data = $d->data;
+        if (!$this->handleReference($data, $this->storedObjects)) {
+            $obj_length = strlen($data);
             $this->writeAmf3Int($obj_length << 1 | 0x01);
-            $this->outBuffer .= $d;
+            $this->outBuffer .= $data;
         }
     }
 
@@ -791,51 +796,54 @@ class Afx_Amf_Serializer {
      * - if not, the object is pushed to the references array, and array_search is used. So the array has the structure reference => object.
      * maxing out the number of stored references improves performance(tested with an array of 9000 identical objects). This may be because isset's performance
      * is linked to the size of the array. weird...
+     * note on using $references[$count] = &$obj; rather than 
+     * $references[] = &$obj;
+     * the first one is right, the second is not, as with the second one we could end up with the following:
+     * some object hash => 0, 0 => array. (it should be 1 => array)
      * 
      * This also means that 2 completely separate instances of a class but with the same values will be written fully twice if we can't use the hash system
      * 
      * @param mixed $obj
      * @param array $references
      */
-    protected function handleReference(&$obj, array &$references){
+    protected function handleReference(&$obj, array &$references) {
         $key = false;
-        if(is_object($obj) && function_exists('spl_object_hash')){
+        $count = count($references);
+        if (is_object($obj) && function_exists('spl_object_hash')) {
             $hash = spl_object_hash($obj);
-            if(isset($references[$hash])){
+            if (isset($references[$hash])) {
                 $key = $references[$hash];
-            }else{
-                if(count($references) <= self::MAX_STORED_OBJECTS){
+            } else {
+                if ($count <= self::MAX_STORED_OBJECTS) {
                     //there is some space left, store object for reference
-                    $references[$hash] = count($references);
+                    $references[$hash] = $count;
                 }
             }
-        }else{
+        } else {
             //no hash available, use array with simple numeric keys
             $key = array_search($obj, $references, TRUE);
-            
-            if(($key === false) && (count($references) <= self::MAX_STORED_OBJECTS)){
+
+            if (($key === false) && ($count <= self::MAX_STORED_OBJECTS)) {
                 // $key === false means the object isn't already stored
                 // count... means there is still space
                 //so only store if these 2 conditions are met
-                $references[] = &$obj;
-                
+                $references[$count] = &$obj;
             }
         }
-        
-        if($key !== false){
+
+        if ($key !== false) {
             //reference exists. write it and return true
-            if($this->packet->amfVersion == Afx_Amf_Constants::AMF0_ENCODING){
+            if ($this->packet->amfVersion == Afx_Amf_Constants::AMF0_ENCODING) {
                 $this->writeReference($key);
-            }else{
+            } else {
                 $handle = $key << 1;
                 $this->writeAmf3Int($handle);
             }
             return true;
-        }else{
+        } else {
             return false;
         }
     }
-    
 
     /**
      * writes a typed object. Type is determined by having an "explicit type" field. If this field is 
@@ -849,20 +857,20 @@ class Afx_Amf_Serializer {
         if ($this->handleReference($d, $this->storedObjects)) {
             return;
         }
-       
+
         $explicitTypeField = Afx_Amf_Constants::FIELD_EXPLICIT_TYPE;
-        
+
         $className = $d->$explicitTypeField;
         $propertyNames = null;
 
-        if(isset ($this->className2TraitsInfo[$className])){
+        if (isset($this->className2TraitsInfo[$className])) {
             //we have traits information and a reference for it, so use a traits reference
             $traitsInfo = $this->className2TraitsInfo[$className];
             $propertyNames = $traitsInfo['propertyNames'];
             $referenceId = $traitsInfo['referenceId'];
             $traitsReference = $referenceId << 2 | 1;
             $this->writeAmf3Int($traitsReference);
-        }else{
+        } else {
             //no available traits information. Write the traits
             $propertyNames = array();
             foreach ($d as $key => $value) {
@@ -878,7 +886,7 @@ class Afx_Amf_Serializer {
             //class name
             $this->writeAmf3String($className);
             //list of property names
-            foreach ($propertyNames as $propertyName){
+            foreach ($propertyNames as $propertyName) {
                 $this->writeAmf3String($propertyName);
             }
 
@@ -887,11 +895,9 @@ class Afx_Amf_Serializer {
             $this->className2TraitsInfo[$className] = $traitsInfo;
         }
         //list of values
-        foreach ($propertyNames as $propertyName){
+        foreach ($propertyNames as $propertyName) {
             $this->writeAmf3Data($d->$propertyName);
         }
-
-
     }
 
 }

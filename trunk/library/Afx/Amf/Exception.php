@@ -1,6 +1,6 @@
 <?php
 /*
- * @version $Id: Exception.php 94 2012-12-10 03:39:40Z zhujinghe $
+ * @version $Id: Exception.php 300 2013-03-21 08:00:48Z cfc4n $
  */
 
 /**
@@ -19,7 +19,7 @@
  * @package Amfphp_Core
  * @author Ariel Sommeria-klein
  */
-class Afx_Exception extends Exception {
+class Afx_Amf_Exception extends Exception {
 	
 }
 ?>

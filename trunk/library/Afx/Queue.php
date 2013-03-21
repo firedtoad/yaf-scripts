@@ -1,6 +1,6 @@
 <?php
 /**
- * @version $Id: Queue.php 169 2012-12-25 06:10:10Z zhangwenhao $
+ * @version $Id: Queue.php 281 2013-03-19 07:45:22Z zhangwenhao $
  * The Queue Class Encapsulation with Redis in background  
  * @author zhangwenhao 
  */
@@ -133,8 +133,7 @@ class Afx_Queue
             {
                 $cache->delete($key);
             }
-            echo $key;
-            $first = array_shift($values);
+                    $first = array_shift($values);
             $cache->lPush($key, $first);
          
             foreach ($values as $value)
