@@ -1,8 +1,4 @@
 <?php
-/*
- * @version $Id: Date.php 94 2012-12-10 03:39:40Z zhujinghe $
- */
-
 /**
  *  This file is part of amfPHP
  *
@@ -27,8 +23,12 @@ class Afx_Amf_Types_Date
          * @var integer
          */
     	public $timeStamp;
-
-	public function Afx_Amf_Types_Date($timeStamp)
+        
+        /**
+         * time stamp
+         * @param integer $timeStamp
+         */
+	public function __construct($timeStamp)
 	{
 		$this->timeStamp = $timeStamp;
 

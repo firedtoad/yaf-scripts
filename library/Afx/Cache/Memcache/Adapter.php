@@ -36,6 +36,10 @@ class Afx_Cache_Memcache_Adapter implements Afx_Cache_Adapter
         return self::$__instance;
     }
 
+    public function auth($pass)
+    {
+        
+    }
     /**
      * set debug on|off
      * @param boolean $bool

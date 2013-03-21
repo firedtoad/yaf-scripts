@@ -1,7 +1,4 @@
 <?php
-/*
- * @version $Id: XmlDocument.php 94 2012-12-10 03:39:40Z zhujinghe $
- */
 
 /**
  *  This file is part of amfPHP
@@ -20,14 +17,22 @@
  * @package Afx_Amf_Types
  * @author Ariel Sommeria-klein
  */
+class Afx_Amf_Types_XmlDocument {
 
-class Afx_Amf_Types_XmlDocument
-{
-	public $data;
+    /**
+     * data
+     * @var string 
+     */
+    public $data;
 
-	public function Afx_Amf_Types_XmlDocument($data)
-	{
-		$this->data = $data;
-	}
+    /**
+     * constructor
+     * @param string $data
+     */
+    public function __construct($data) {
+        $this->data = $data;
+    }
+
 }
+
 ?>

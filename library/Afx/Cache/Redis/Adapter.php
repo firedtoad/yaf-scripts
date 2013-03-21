@@ -39,7 +39,7 @@ class Afx_Cache_Redis_Adapter implements Afx_Cache_Adapter
     const SERIALIZER_IGBINARY = 2;
     const AFTER = 'after';
     const BEFORE = 'before';
-
+    
     /**
      * @var array
      */
@@ -57,19 +57,42 @@ class Afx_Cache_Redis_Adapter implements Afx_Cache_Adapter
      */
     private $__redis;
 
+    /**
+     * @var string
+     */
     private $__host;
 
+    /**
+     * @var int
+     */
     private $__port;
+    
+    /**
+     * @var string
+     */
+    private $__pass;
 
+    /**
+     * @var int
+     */
     private $__timeout;
 
+    /**
+     * @var boolean
+     */
     private $__persist;
 
+    /**
+     * @var array
+     */
     private $__cache = array();
     /**
      * @var boolean
      */
     private static $__debug;
+    
+    private $__dbname;
+    
     /**
      * @var boolean
      */
@@ -87,6 +110,8 @@ class Afx_Cache_Redis_Adapter implements Afx_Cache_Adapter
     {
         self::$__local_cache=$local_cache;
     }
+    
+    
     /**
      */
     public function add ($key, $value, $expire = 3600)
@@ -139,6 +164,8 @@ class Afx_Cache_Redis_Adapter implements Afx_Cache_Adapter
         $this->__port = $__config['port'];
         $this->__timeout = $__config['timeout'];
         $this->__persist = $__config['persist'];
+        $this->__pass = $__config['pass'];
+        $this->__dbname = $__config['dbname'];
     }
 
     private function __construct ()
@@ -149,6 +176,10 @@ class Afx_Cache_Redis_Adapter implements Afx_Cache_Adapter
     {
         $this->__redis = new Redis();
         $this->__persist ? $this->pconnect() : $this->connect();
+        if($this->__pass)
+        {
+            $this->auth($this->__pass);
+        }
          //        ReflectionClass::export($redis);
     //        $redis->addServer();
     }
@@ -172,12 +203,19 @@ class Afx_Cache_Redis_Adapter implements Afx_Cache_Adapter
         //        ReflectionMethod::export('redis', 'connect');
         //        echo $this->__host.$this->__port;
         //        ReflectionParameter::export($function, $parameter)
-        $this->__redis->connect($this->__host, $this->__port, $this->__timeout);
+        if($this->__redis->connect($this->__host, $this->__port, $this->__timeout))
+        {
+            $this->__redis->select(0);
+        }
+        
     }
 
     public function pconnect ()
     {
-        $this->__redis->pconnect($this->__host, $this->__port, $this->__timeout);
+        if($this->__redis->pconnect($this->__host, $this->__port, $this->__timeout))
+        {
+             $this->__redis->select(0);
+        }
     }
 
     public function close ()
@@ -197,6 +235,7 @@ class Afx_Cache_Redis_Adapter implements Afx_Cache_Adapter
         {
             $value=$this->__cache[$key];
         }
+        
         !$value&&$value = $this->__redis->get($key);
         if (gettype($value) == 'string')
         {
@@ -227,6 +266,8 @@ class Afx_Cache_Redis_Adapter implements Afx_Cache_Adapter
         {
             $v1 = serialize($v);
         }
+        
+        
         $ret = $this->__redis->set($k, $v1, $expire);
         if ($ret)
         {
@@ -279,10 +320,10 @@ class Afx_Cache_Redis_Adapter implements Afx_Cache_Adapter
         return $ret;
     }
 
-    public function setnx ($k, $ttl = 3600, $v)
+    public function setnx ($k, $v)
     {
         $old_cache = isset($this->__cache[$k]) ? $this->__cache[$k] : array();
-        $value = Afx_Common::cachePreUpdate($value, $old_cache);
+        $value = Afx_Common::cachePreUpdate($v, $old_cache);
         $ret = TRUE;
         if (is_array($v) || is_object($v))
         {
@@ -290,15 +331,25 @@ class Afx_Cache_Redis_Adapter implements Afx_Cache_Adapter
         }else{
             $ret = FALSE;
         }
-        $ret&&$ret = $this->__redis->setex($k, $ttl, $v);
+        $ret&&$ret = $this->__redis->setnx($k, $v);
         if ($ret)
         {
             self::$__local_cache&&$this->__cache[$k] = $value;
             $ret=TRUE;
         }
+      
         return $ret;
     }
 
+    public function setnxLock ($k, $v)
+    {
+        if (is_array($v) || is_object($v))
+        {
+            $v = serialize($v);
+        }
+        return $this->__redis->setnx($k, $v);
+    }
+    
     public function getSet ($k, $v)
     {
         if (is_array($v) || is_object($v))
@@ -1010,7 +1061,7 @@ class Afx_Cache_Redis_Adapter implements Afx_Cache_Adapter
 
     public function mget ($keys)
     {
-        return $this->__redis->mget($$keys);
+        return $this->__redis->mget($keys);
     }
 
     public function expire ($key, $ttl)

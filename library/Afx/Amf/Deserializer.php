@@ -1,8 +1,4 @@
 <?php
-/*
- * @version $Id: Deserializer.php 94 2012-12-10 03:39:40Z zhujinghe $
- */
-
 
 /**
  *  This file is part of amfPHP
@@ -20,8 +16,11 @@
  *
  * @package Afx_Amf
  */
-class Afx_Amf_Deserializer {
-
+class Afx_Amf_Deserializer implements Afx_Amf_Common_IDeserializer{
+    /**
+     * data to deserialize
+     * @var string 
+     */
     protected $rawData;
 
     /**
@@ -55,32 +54,48 @@ class Afx_Amf_Deserializer {
     protected $deserializedPacket;
 
     /**
-     * metaInfo
+     *  strings stored for tracking references(amf3)
+     * @var array
      */
-    protected $meta;
     protected $storedStrings;
+     
+    /**
+     *  objects stored for tracking references(amf3)
+     * @var array
+     */
     protected $storedObjects;
+    
+    /**
+     *  class definitions(traits) stored for tracking references(amf3)
+     * @var array
+     */    
     protected $storedDefinitions;
+     
+    /**
+     *  objects stored for tracking references(amf0)
+     * @var array
+     */    
     protected $amf0storedObjects;
 
-    public function __construct($raw) {
-        $this->rawData = $raw;
-        $this->currentByte = 0;
-        $this->content_length = strlen($this->rawData); // grab the total length of this stream
-    }
-
     /**
-     * deserialize invokes this class to transform the raw data into valid object
-     *
-     * @param object $amfdata The object to put the deserialized data in
+     * convert from text/binary to php object
+     * @param array $getData
+     * @param array $postData
+     * @param string $rawPostData
+     * @return Afx_Amf_Packet
      */
-    public function deserialize() {
+    public function deserialize(array $getData, array $postData, $rawPostData) {
+        $this->rawData = $rawPostData;
+        $this->currentByte = 0;
         $this->deserializedPacket = new Afx_Amf_Packet();
         $this->readHeaders(); // read the binary headers
         $this->readMessages(); // read the binary Messages
         return $this->deserializedPacket;
     }
     
+    /**
+     * reset reference stores
+     */
     protected function resetReferences(){
         $this->amf0storedObjects = array();
         $this->storedStrings = array();
@@ -102,6 +117,10 @@ class Afx_Amf_Deserializer {
 			if (!($topByte == 0 || $topByte == 3)) {
             throw new Afx_Exception('Malformed Amf Packet, connection may have dropped');
         }
+        if($secondByte == 3){
+            $this->deserializedPacket->amfVersion = Afx_Amf_Constants::AMF3_ENCODING;
+        }
+        
         $this->headersLeftToProcess = $this->readInt(); //  find the total number of header elements
 
         while ($this->headersLeftToProcess--) { // loop over all of the header elements
@@ -111,6 +130,7 @@ class Afx_Amf_Deserializer {
             //$length   = $this->readLong(); // grab the length of  the header element
             $this->currentByte += 4; // grab the length of the header element
 
+            
             $type = $this->readByte();  // grab the type of the element
             $content = $this->readData($type); // turn the element into real data
 
@@ -119,6 +139,9 @@ class Afx_Amf_Deserializer {
         }
     }
 
+    /**
+     * read messages in AMF packet
+     */
     protected function readMessages() {
         $this->messagesLeftToProcess = $this->readInt(); // find the total number  of Message elements
         while ($this->messagesLeftToProcess--) { // loop over all of the Message elements
@@ -127,13 +150,13 @@ class Afx_Amf_Deserializer {
             $response = $this->readUTF(); //    the response that the client understands
             //$length = $this->readLong(); // grab the length of    the Message element
             $this->currentByte += 4;
-
             $type = $this->readByte(); // grab the type of the element
             $data = $this->readData($type); // turn the element into real data
             $message = new Afx_Amf_Message($target, $response, $data);
             $this->deserializedPacket->messages[] = $message;
         }
     }
+    
 
     /**
      * readInt grabs the next 2 bytes and returns the next two bytes, shifted and combined
@@ -224,7 +247,7 @@ class Afx_Amf_Deserializer {
                 exit();
                 break;
         }
-        return null;
+        return $data;
     }
 
     /**
@@ -326,7 +349,7 @@ class Afx_Amf_Deserializer {
      * readDate reads a date from the amf Packet and returns the time in ms.
      * This method is still under development.
      *
-     * @return long The date in ms.
+     * @return Afx_Amf_Types_Date a container with the date in ms.
      */
     protected function readDate() {
         $ms = $this->readDouble(); // date in milliseconds from 01/01/1970
@@ -336,7 +359,7 @@ class Afx_Amf_Deserializer {
     }
 
     /**
-     *
+     * read xml
      * @return Afx_Amf_Types_Xml 
      */
     protected function readXml() {
@@ -385,8 +408,6 @@ class Afx_Amf_Deserializer {
      * @return mixed
      */
     public function readAmf3Data() {
-        //AMF3 data found, so mark it in the deserialized packet. This is useful to know what kind of AMF to send back
-        $this->deserializedPacket->amfVersion = Afx_Amf_Constants::AMF3_ENCODING;
         $type = $this->readByte();
         switch ($type) {
             case 0x00 :
@@ -459,7 +480,12 @@ class Afx_Amf_Deserializer {
             }
         }
     }
-
+    
+    /**
+     * read amf 3 date
+     * @return boolean|\Afx_Amf_Types_Date
+     * @throws Afx_Exception
+     */
     protected function readAmf3Date() {
         $firstInt = $this->readAmf3Int();
         if (($firstInt & 0x01) == 0) {
@@ -506,7 +532,7 @@ class Afx_Amf_Deserializer {
     }
 
     /**
-     *
+     * read amf 3 xml
      * @return Afx_Amf_Types_Xml
      */
     protected function readAmf3Xml() {
@@ -523,7 +549,7 @@ class Afx_Amf_Deserializer {
     }
 
     /**
-     *
+     * read amf 3 xml doc
      * @return Afx_Amf_Types_Xml
      */
     protected function readAmf3XmlDocument() {
@@ -539,6 +565,10 @@ class Afx_Amf_Deserializer {
         return new Afx_Amf_Types_XmlDocument($xml);
     }
 
+    /**
+     * read Amf 3 byte array
+     * @return Afx_Amf_Types_ByteArray
+     */
     protected function readAmf3ByteArray() {
         $handle = $this->readAmf3Int();
         $inline = (($handle & 1) != 0);
@@ -552,6 +582,10 @@ class Afx_Amf_Deserializer {
         return $ba;
     }
 
+    /**
+     * read amf 3 array
+     * @return array
+     */
     protected function readAmf3Array() {
         $handle = $this->readAmf3Int();
         $inline = (($handle & 1) != 0);
@@ -578,8 +612,8 @@ class Afx_Amf_Deserializer {
     }
 
     /**
-     * this probably needs some refactoring. Leave as is for now... A.S.
-     * @return Object
+     * read amf 3 object
+     * @return stdClass
      */
     protected function readAmf3Object() {
         $handle = $this->readAmf3Int();
@@ -668,7 +702,9 @@ class Afx_Amf_Deserializer {
     }
 
     /**
-     * Taken from SabreAmf
+     * read some data and move pointer
+     * @param type $len
+     * @return mixed
      */
     protected function readBuffer($len) {
         $data = '';

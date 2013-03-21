@@ -1,8 +1,4 @@
 <?php
-/*
- * @version $Id: Undefined.php 94 2012-12-10 03:39:40Z zhujinghe $
- */
-
 /**
  *  This file is part of amfPHP
  *
@@ -18,16 +14,8 @@
  * @package Afx_Amf_Types
  * @author Ariel Sommeria-klein
  */
-class Afx_Amf_Types_Undefined
-{
-	public function exists()
-	{
-		return false;
-	}
+class Afx_Amf_Types_Undefined{
 
-	public function __toString()
-	{
-		return 'undefined';
-	}
+
 }
 ?>
