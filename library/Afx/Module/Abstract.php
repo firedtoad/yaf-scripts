@@ -21,7 +21,7 @@
  * @author Afx team && firedtoad@gmail.com &&dietoad@gmail.com
  */
 /**
- * @version $Id: Abstract.php 259 2013-03-05 08:29:26Z zhangwenhao $
+ * @version $Id: Abstract.php 704 2013-05-16 07:39:51Z zhangwenhao $
  * @author zhangwenhao 
  *
  */
@@ -471,13 +471,13 @@ abstract class Afx_Module_Abstract
      */
     public function delete ($id = NULL)
     {
-//        $this->_doPartition();
+        //        $this->_doPartition();
         if ($id)
         {
-            $this->where('id',$id);
-//            return FALSE;
+            $this->where('id', $id);
+             //            return FALSE;
         }
-        $sql=$this->_generateSql('DELETE ');
+        $sql = $this->_generateSql('DELETE ');
         //$sql = sprintf('DELETE  FROM ' . $this->_from . ' WHERE `id`=%d', $rid);
         return $this->getAdapter()->execute($sql);
     }
@@ -601,7 +601,7 @@ abstract class Afx_Module_Abstract
      * generate the sql string use the conditions
      * @return string
      */
-    private function _generateSql ($prefix='SELECT ')
+    private function _generateSql ($prefix = 'SELECT ')
     {
         $this->_doPartition();
         $sql = $prefix;
@@ -614,7 +614,7 @@ abstract class Afx_Module_Abstract
         {
             if (! is_array($this->_field) || count($this->_field) == 0)
             {
-                $prefix!=='DELETE '&&$sql .= "*";
+                $prefix !== 'DELETE ' && $sql .= "*";
             } elseif (count($this->_field))
             {
                 foreach ($this->_field as $k => $v)
@@ -696,8 +696,8 @@ abstract class Afx_Module_Abstract
                 }
             if ($this->_limit)
             {
-                $prefix!=='DELETE '&&$sql .= " limit " . $this->_offset . "," . $this->_limit;
-                $prefix==='DELETE '&&$sql .=' limit ' .$this->_limit; 
+                $prefix !== 'DELETE ' && $sql .= " limit " . $this->_offset . "," . $this->_limit;
+                $prefix === 'DELETE ' && $sql .= ' limit ' . $this->_limit;
             }
         }
         $this->_where = array();
@@ -1043,13 +1043,14 @@ abstract class Afx_Module_Abstract
     public function insert ($arr = array(), $table, $master = FALSE, $usetrans = FALSE)
     {
         $ret = TRUE;
+        $single=FALSE;
         if ($table) $this->_from = $table;
         //    	Afx_Debug_Helper::print_r($arr);
         //        echo sizeof($arr),"<br/>";
         if (is_array($arr) && count($arr) > 0)
         {
-            $first=current($arr);
-            if (!is_array($first))
+            $first = current($arr);
+            if (! is_array($first))
             {
                 $sql = 'INSERT INTO ' . $this->_from . ' (';
                 foreach (array_keys($arr) as $k)
@@ -1070,7 +1071,25 @@ abstract class Afx_Module_Abstract
                 $sql .= ')';
                 //                echo '<br>';
                 $ret = $this->getAdapter()->execute($sql);
+                $single=TRUE;
             }
+            /**
+             * 添加到数据库表时解决 column does not match values 悲剧
+             */
+            if(!$single&&!$this->_is_standard_2darray($arr))
+            {
+                $arr=$this->_classify($arr);
+                foreach ($arr as $ak=>$av) 
+                {
+                    $ret=$this->insert($av,$table);
+                    if(!$ret)
+                    {
+                        break;
+                    }
+                }
+                return $ret;
+            }
+            
             if (is_array($first))
             {
                 $sql = '';
@@ -1123,16 +1142,17 @@ abstract class Afx_Module_Abstract
     public function replace ($arr = array(), $table, $master = FALSE, $usetrans = FALSE)
     {
         $ret = TRUE;
+        $single=FALSE;
         if ($table) $this->_from = $table;
         if (is_array($arr) && count($arr) > 0)
         {
-            $first=current($arr);
-            if (!is_array($first))
+            $first = current($arr);
+            if (! is_array($first))
             {
                 $sql = 'REPLACE INTO ' . $this->_from . ' (';
                 foreach (array_keys($arr) as $k)
                 {
-//                     if ($k == 'id') continue;
+                    //                     if ($k == 'id') continue;
                     $sql .= '`' . $k . '`,';
                 }
                 $lastIndex = strrpos($sql, ',');
@@ -1140,14 +1160,32 @@ abstract class Afx_Module_Abstract
                 $sql .= ') VALUES (';
                 foreach ($arr as $k => $v)
                 {
-//                     if ($k == 'id') continue;
+                    //                     if ($k == 'id') continue;
                     $sql .= $this->_processValue($v) . ',';
                 }
                 $lastIndex = strrpos($sql, ',');
                 $sql = substr($sql, 0, $lastIndex);
                 $sql .= ')';
                 $ret = $this->getAdapter()->execute($sql);
+                $single=TRUE;
             }
+             /**
+             * 替换数据库表数据时解决 column does not match values 悲剧
+             */
+            if(!$single&&!$this->_is_standard_2darray($arr))
+            {
+                $arr=$this->_classify($arr);
+                foreach ($arr as $ak=>$av) 
+                {
+                    $ret=$this->replace($av,$table);
+                    if(!$ret)
+                    {
+                        break;
+                    }
+                }
+                return $ret;
+            }
+            
             if (is_array($first))
             {
                 $sql = '';
@@ -1156,7 +1194,6 @@ abstract class Afx_Module_Abstract
                     $sql = 'REPLACE INTO ' . $this->_from . ' (';
                     foreach (array_keys($first) as $k)
                     {
-//                         if ($k == 'id') continue;
                         $sql .= '`' . $k . '`,';
                     }
                     $lastIndex = strrpos($sql, ',');
@@ -1169,7 +1206,6 @@ abstract class Afx_Module_Abstract
                             $sql .= ' (';
                             foreach ($v as $k1 => $v1)
                             {
-//                                 if ($k1 == 'id') continue;
                                 $sql .= $this->_processValue($v1) . ',';
                             }
                             $lastIndex = strrpos($sql, ',');
@@ -1205,7 +1241,7 @@ abstract class Afx_Module_Abstract
      */
     private function _processValue ($v)
     {
-		$ret = '';
+        $ret = '';
         switch (strtolower(gettype($v)))
         {
             case 'string':
@@ -1227,7 +1263,7 @@ abstract class Afx_Module_Abstract
             default:
                 break;
         }
-//        $ret = $this->quote($v);
+        //        $ret = $this->quote($v);
         return $ret;
     }
 
@@ -1248,13 +1284,49 @@ abstract class Afx_Module_Abstract
         return $str;
     }
 
+    /**
+     * 检查是否为标准数组
+     * 每一维的长度*维数==总长度 否则  不是标准数组
+     * @param array $a
+     */
+    protected function _is_standard_2darray ($a = array())
+    {
+        $count = count($a);
+        if ($count > 0)
+        {
+            $first = current($a);
+            $count_all = count($a, COUNT_RECURSIVE);
+            $first_len = count($first);
+            return $count_all - ($count * $first_len + $count) == 0;
+        }
+        return FALSE;
+    }
+   /**
+    * 给二维数组分类
+    * @param array $array
+    * @return array classified array
+    */
+    protected function _classify ($array)
+    {
+        $carray = array();
+        foreach ($array as $k => $value)
+        {
+            $len = count($value);
+            if (! isset($carray[$len]))
+            {
+                $carray[$len] = array();
+            }
+            $carray[$len][] = $value;
+        }
+        return $carray;
+    }
+
     protected function _init ()
     {
         $config = Yaf_Registry::get('config');
-        $adapter = Afx_Db_Factory::DbDriver($config['mysql']['driver'],TRUE);
+        $adapter = Afx_Db_Factory::DbDriver($config['mysql']['driver'], TRUE);
         $adapter->setConfig($config['mysql']);
         $this->setAdapter($adapter);
-        
     }
 
     /**

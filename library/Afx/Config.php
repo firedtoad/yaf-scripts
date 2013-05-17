@@ -1,6 +1,6 @@
 <?php
 /**
- * @version $Id: Config.php 195 2013-01-03 08:28:51Z zhangwenhao $
+ * @version $Id: Config.php 662 2013-05-15 07:24:39Z zhangwenhao $
  * The Afx_Config Class Encapsulation
  * @author zhangwenhao 
  */
@@ -13,6 +13,8 @@ class Afx_Config extends Afx_Module_Abstract
      */
     public static $cache_path;
 
+    const CONFIG_PREFIX='CONFIG:';
+    
     /**
      * the only instance
      * @var Afx_Config
@@ -66,28 +68,35 @@ class Afx_Config extends Afx_Module_Abstract
     public function getConfig ($cache_name, $index = NULL, $index_name = 'name')
     {
         $result = $this->__getCacheData($cache_name, $index);
+        
         if (! $result)
         {
             $result = $this->from($cache_name)
                 ->limit(0)
                 ->get()
                 ->result();
-                 
             if ($result)
             {
                 $result = $this->__filter($result, $index_name);
                
                 $this->__saveCacheData($cache_name, $result, $index_name);
             }
+            
         }
         $ret = $result;
         if (isset($result[$index]))
         {
             $ret = $result[$index];
+        }else if($index&&!isset($result[$index_name])){
+            $ret=NULL;
         }
         return $ret;
     }
 
+    /**
+     * @param boolean $create
+     * @return Afx_Config
+     */
     public static function Instance ($create = FALSE)
     {
         if ($create)
@@ -128,6 +137,7 @@ class Afx_Config extends Afx_Module_Abstract
     private function __getCacheData ($cache_name, $index)
     {
         $cache = NULL;
+        $cache_name=self::CONFIG_PREFIX.$cache_name;
         if ($index)
         {
             $cache = self::$__cache->get($cache_name);
@@ -154,7 +164,7 @@ class Afx_Config extends Afx_Module_Abstract
                     {
                         foreach ($keys as $k)
                         {
-                            $lcache = self::$__cache->get($cache_name . $k);
+                            $lcache = self::$__cache->get($cache_name .':'. $k);
                             $cache = $lcache&&array_merge($cache, $lcache);
                         }
                     }
@@ -168,24 +178,26 @@ class Afx_Config extends Afx_Module_Abstract
     private function __saveCacheData ($cache_name, $result, $index_name = 'name')
     {
         $rows = count($result);
+        $cache_name=self::CONFIG_PREFIX.$cache_name;
         $arr = array();
         //是否需要分段
         $need_seg = $rows >= self::$__seg;
         if ($rows > 0)
         {
-            foreach ($result as $value)
+            foreach ($result as $key=>$value)
             {
-                $hash = self::times33($value[$index_name]) % self::$__seg;
+                $index = !is_null($value[$index_name]) ? $value[$index_name] : $key;
+                $hash = self::times33( $index) % self::$__seg;
                 if ($need_seg)
                 {
                     if (! isset($arr[$hash]))
                     {
                         $arr[$hash] = array();
                     }
-                    $arr[$hash][$value[$index_name]] = $value;
+                    $arr[$hash][$index] = $value;
                 } else
                 {
-                    $arr[$value[$index_name]] = $value;
+                    $arr[$index] = $value;
                 }
             }
         }
@@ -197,7 +209,7 @@ class Afx_Config extends Afx_Module_Abstract
                 foreach ($arr as $k => $value)
                 {
                     $key_array[] = $k;
-                    self::$__cache->set($cache_name . $k, $value, 0);
+                    self::$__cache->set($cache_name .':'. $k, $value, 0);
                 }
                 sort($key_array);
                 self::$__cache->set($cache_name, $key_array);
@@ -211,6 +223,9 @@ class Afx_Config extends Afx_Module_Abstract
 
     private function __filter ($result = array(), $index_name = 'name')
     {
+        if (is_null($index_name)){
+            return $result;
+        }
         $ret_array = array();
         if (count($result))
         {

@@ -115,7 +115,7 @@ class Afx_Amf_Deserializer implements Afx_Amf_Common_IDeserializer{
         //If firstByte != 0, then the Amf data is corrupted, for example the transmission
         //
 			if (!($topByte == 0 || $topByte == 3)) {
-            throw new Afx_Exception('Malformed Amf Packet, connection may have dropped');
+            throw new Afx_Amf_Exception('Malformed Amf Packet, connection may have dropped');
         }
         if($secondByte == 3){
             $this->deserializedPacket->amfVersion = Afx_Amf_Constants::AMF3_ENCODING;
@@ -243,11 +243,11 @@ class Afx_Amf_Deserializer implements Afx_Amf_Common_IDeserializer{
             case 0x10: // Custom Class
                 return $this->readCustomClass();
             default: // unknown case
-                throw new Afx_Exception("Found unhandled type with code: $type");
+                throw new Afx_Amf_Exception("Found unhandled type with code: $type");
                 exit();
                 break;
         }
-        return $data;
+        //return $data;
     }
 
     /**
@@ -437,7 +437,7 @@ class Afx_Amf_Deserializer implements Afx_Amf_Common_IDeserializer{
             case 0x0C :
                 return $this->readAmf3ByteArray();
             default:
-                throw new Afx_Exception('undefined Amf3 type encountered: ' . $type);
+                throw new Afx_Amf_Exception('undefined Amf3 type encountered: ' . $type);
         }
     }
 
@@ -491,7 +491,7 @@ class Afx_Amf_Deserializer implements Afx_Amf_Common_IDeserializer{
         if (($firstInt & 0x01) == 0) {
             $firstInt = $firstInt >> 1;
             if ($firstInt >= count($this->storedObjects)) {
-                throw new Afx_Exception('Undefined date reference: ' . $firstInt);
+                throw new Afx_Amf_Exception('Undefined date reference: ' . $firstInt);
                 return false;
             }
             return $this->storedObjects[$firstInt];
@@ -516,7 +516,7 @@ class Afx_Amf_Deserializer implements Afx_Amf_Common_IDeserializer{
         if (($strref & 0x01) == 0) {
             $strref = $strref >> 1;
             if ($strref >= count($this->storedStrings)) {
-                throw new Afx_Exception('Undefined string reference: ' . $strref, E_USER_ERROR);
+                throw new Afx_Amf_Exception('Undefined string reference: ' . $strref, E_USER_ERROR);
                 return false;
             }
             return $this->storedStrings[$strref];

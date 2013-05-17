@@ -23,7 +23,7 @@ interface Afx_Amf_Common_IDeserializedRequestHandler {
      * @param Afx_Common_ServiceRouter $serviceRouter the service router created and configured by the gateway
      * @return mixed the response object.  For Amf, this is an AmfPacket
      */
-    public function handleDeserializedRequest($deserializedRequest, Afx_Common_ServiceRouter $serviceRouter);
+    public function handleDeserializedRequest($deserializedRequest, Afx_Amf_Common_ServiceRouter $serviceRouter);
 }
 
 ?>

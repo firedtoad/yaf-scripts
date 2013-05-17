@@ -522,7 +522,7 @@ class Afx_Amf_Serializer implements Afx_Amf_Common_ISerializer {
                 return;
             }
         }
-        throw new Afx_Exception("couldn't write object " . print_r($d, false));
+        throw new Afx_Amf_Exception("couldn't write object " . print_r($d, false));
     }
 
     /**

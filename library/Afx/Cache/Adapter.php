@@ -26,4 +26,6 @@ interface Afx_Cache_Adapter
     public function exists($key);
     
     public function flush();
+    
+    public function keys($pattern);
 }

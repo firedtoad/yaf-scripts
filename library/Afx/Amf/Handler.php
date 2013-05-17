@@ -122,7 +122,7 @@ class Afx_Amf_Handler implements Afx_Amf_Common_IDeserializer, Afx_Amf_Common_ID
      * @return Afx_Amf_Message the response Message for the request
      */
     protected function handleRequestMessage(Afx_Amf_Message $requestMessage, Afx_Amf_Common_ServiceRouter $serviceRouter) {
-        $filterManager = Afx_Amf_FilterManager::getInstance();
+        $filterManager = Afx_Amfphp_Core_FilterManager::getInstance();
         $fromFilters = $filterManager->callFilters(self::FILTER_AMF_REQUEST_MESSAGE_HANDLER, null, $requestMessage);
         if ($fromFilters) {
             $handler = $fromFilters;
@@ -147,14 +147,14 @@ class Afx_Amf_Handler implements Afx_Amf_Common_IDeserializer, Afx_Amf_Common_ID
      * @param Afx_Common_ServiceRouter $serviceRouter
      * @return mixed
      */
-    public function handleDeserializedRequest($deserializedRequest, Afx_Common_ServiceRouter $serviceRouter) {
+    public function handleDeserializedRequest($deserializedRequest, Afx_Amf_Common_ServiceRouter $serviceRouter) {
         self::$requestPacket = $deserializedRequest;
         self::$responsePacket = new Afx_Amf_Packet();
         $numHeaders = count(self::$requestPacket->headers);
         for ($i = 0; $i < $numHeaders; $i++) {
             $requestHeader = self::$requestPacket->headers[$i];
             //handle a header. This is a job for plugins, unless comes a header that is so fundamental that it needs to be handled by the core
-            $fromFilters = Afx_FilterManager::getInstance()->callFilters(self::FILTER_AMF_REQUEST_HEADER_HANDLER, null, $requestHeader);
+            $fromFilters = Afx_Amfphp_Core_FilterManager::getInstance()->callFilters(self::FILTER_AMF_REQUEST_HEADER_HANDLER, null, $requestHeader);
             if ($fromFilters) {
                 $handler = $fromFilters;
                 $handler->handleRequestHeader($requestHeader);
@@ -185,7 +185,7 @@ class Afx_Amf_Handler implements Afx_Amf_Common_IDeserializer, Afx_Amf_Common_ID
      */
     public function handleException(Exception $exception) {
         $errorPacket = new Afx_Amf_Packet();
-        $filterManager = Afx_FilterManager::getInstance();
+        $filterManager = Afx_Amfphp_Core_FilterManager::getInstance();
         $fromFilters = $filterManager->callFilters(self::FILTER_AMF_EXCEPTION_HANDLER, null);
         if ($fromFilters) {
             $handler = $fromFilters;

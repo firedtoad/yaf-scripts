@@ -45,22 +45,22 @@ class Afx_ChatClient
      * @var ChatClient
      */
     private static $instance;
-    const HOST = '192.168.17.81';
-//    const HOST = '127.0.0.1';
+//    const HOST = '192.168.17.81';
+    const HOST = '127.0.0.1';
     const PORT = 8888;
     const TIMEOUT = 1;
     const USER = '0';
     const LEAGUE_ID = 65535;
     const SCENE_ID = 65535;
-    const SYSTEMKEY='sss';
-
+    const SYSTEMKEY = '中文密钥阿卡家开始大数据库的';
+    const IFACTOR=33;
     public static $msgs = array();
 
     static $auto_login = true;
 
     static $debug = FALSE;
-//    static $debug = TRUE;
 
+    //    static $debug = TRUE;
     static $login_state = 0;
 
     static $last_command;
@@ -71,6 +71,19 @@ class Afx_ChatClient
     private static $sock = 0;
 
     static $arr = array();
+
+    function EncOrDec ($str, $key)
+    {
+        $str = str_split($str);
+        $len = count($str);
+        $klen = strlen($key);
+        for ($i = 0; $i < $len; $i ++)
+        {
+            $str[$i]^=$key[($i+self::IFACTOR)%$klen];
+        }
+        $str = implode($str);
+        return $str;
+    }
 
     private function __construct ($host = self::HOST, $port = self::PORT, $timeout = self::TIMEOUT)
     {
@@ -88,7 +101,7 @@ class Afx_ChatClient
         if (self::$auto_login)
         {
             $this->login(array(
-                'u'=>self::USER,'scene_id'=>self::SCENE_ID,'league_id'=>self::LEAGUE_ID,'key'=>md5(self::SYSTEMKEY.self::USER)
+                'u'=>self::USER,'uid'=>self::USER,'scene_id'=>self::SCENE_ID,'league_id'=>self::LEAGUE_ID,'key'=>md5(self::SYSTEMKEY . self::USER)
             ));
         }
     }
@@ -123,6 +136,7 @@ class Afx_ChatClient
         }
         return $login;
     }
+
     /**
      * 系统消息
      * data:array('type'=>'user|all|team|list','u'=>'dietoad',teamid=>12,'list'=>array('user1','user2'),'m'=>'hi map')
@@ -133,9 +147,11 @@ class Afx_ChatClient
      * @param array $chat
      * @return boolean
      */
-    public function system($data=array()){
+    public function system ($data = array())
+    {
         return $this->__chat_common('system', $data, 'm', 'system_ok');
     }
+
     /**
      * 某个地图发言
      * chat:array('scene_id'=>14,'m'=>'hi map')
@@ -201,6 +217,7 @@ class Afx_ChatClient
     {
         return $this->__chat_common('chatteam', $chat, 'c', 'chatteam');
     }
+
     /**
      * 离线消息
      * chat:array('m'=>'hi team',from='bihuge','u'=>'dietoad')
@@ -248,16 +265,16 @@ class Afx_ChatClient
     public function get_online_count ()
     {
         return $this->__chat_common('getonlinecount', array(), 'm', 'getonlinecount_ok');
-
     }
+
     /**
      * 查询在线状态
      * status:array('friendlist'=>array('username1','username2'))
      * @return boolean
      */
-    public function get_online_status ($status=array())
+    public function get_online_status ($status = array())
     {
-         return $this->__chat_common('friendstatus', $status, 'm', 'friendstatus_ok');
+        return $this->__chat_common('friendstatus', $status, 'm', 'friendstatus_ok');
     }
 
     /**
@@ -303,6 +320,7 @@ class Afx_ChatClient
     {
         return $this->__chat_common('teamkick', $team, 'm', 'team_kick_ok');
     }
+
     /**
      * 退出队伍
      * tean:array('teamid'=>1234)
@@ -366,25 +384,25 @@ class Afx_ChatClient
     {
         return json_decode(self::$msgs[self::$last_command], true);
     }
+
     /**
      * 请求策略文件
      */
-
-    private function __policy_request()
+    private function __policy_request ()
     {
-       fwrite(self::$sock, '<policy-file-request/>');
-       fflush(self::$sock);
-       usleep(8000);
-       $times=10;
-       $i=0;
-       while($i++<$times)
-       {
-             $data=$this->__read();
-             usleep(1000);
-             if($data)break;
-       }
-
+        fwrite(self::$sock, '<policy-file-request/>');
+        fflush(self::$sock);
+        usleep(8000);
+        $times = 10;
+        $i = 0;
+        while ($i ++ < $times)
+        {
+            $data = $this->__read();
+            usleep(1000);
+            if ($data) break;
+        }
     }
+
     /**
      * 检查返回数据是否包含某个字段
      * @param string $key
@@ -403,12 +421,15 @@ class Afx_ChatClient
                 usleep(200);
                 continue;
             }
+            
+            $data=$this->EncOrDec($data, self::SYSTEMKEY);
             $ret = json_decode($data, TRUE);
             self::$msgs[$ret['c']] = $data;
             if (isset($ret[$key]) && $ret[$key] == $value)
             {
                 return true;
-            }else{
+            } else
+            {
                 return true;
             }
         }
@@ -425,7 +446,8 @@ class Afx_ChatClient
     {
         if (isset($arr['c']))
         {
-            $data = json_encode($arr);
+            $data = MCommon::EncodeWithCN($arr);
+            $data=$this->EncOrDec($data, self::SYSTEMKEY);
             fwrite(self::$sock, $data);
             fflush(self::$sock);
             usleep(100);
@@ -438,7 +460,7 @@ class Afx_ChatClient
         if ($command != 'login' && self::$login_state == 0)
         {
             echo 'please invoke $this->login() first before use other command';
-//            throw new UnAuthException('please invoke $this->login() first before use other command', 501);
+            //            throw new UnAuthException('please invoke $this->login() first before use other command', 501);
             return false;
         }
         $arr = array(

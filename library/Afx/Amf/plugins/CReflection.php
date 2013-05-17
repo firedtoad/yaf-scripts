@@ -26,12 +26,13 @@ class Afx_Amf_plugins_CReflection {
     
     function getMethods()
     {
-        preg_match_all('%(?:\}|;|/)\s+(?:p(?:ublic|rivate|rotected)\s+)?function\s+([^()]+)\s*\([^)]*\)%s', $this->_fileinfo, $result, PREG_PATTERN_ORDER);
+//         preg_match_all('%(?:\}|;|/|\{)\s+(?:p(?:ublic|rivate|rotected)\s+)?function\s+([^()]+)Action\s*\([^)]*\)%s', $this->_fileinfo, $result, PREG_PATTERN_ORDER);
+        preg_match_all('%(?:p(?:ublic|rivate|rotected)\s+)?function\s+([^()]+)Action\s*\([^)]*\)%s', $this->_fileinfo, $result, PREG_PATTERN_ORDER);
         $rs = $result[1];
         $arr = array();
         foreach ($rs as $value)
         {
-            $strRegex = '%(?P<comment>/\*(?:(?!\*/).)+\*/)?\s+(?P<access>p(?:ublic|rivate|rotected)\s+)?function\s+'.trim($value).'\s*\((?P<param>[^)]*)\)%s';
+            $strRegex = '%(?P<comment>/\*(?:(?!\*/).)+\*/)?\s+(?P<access>p(?:ublic|rivate|rotected)\s+)?function\s+'.trim($value).'Action\s*\((?P<param>[^)]*)\)%s';
             $strComment = $strFunction = $strParamenters = '';
             if (preg_match($strRegex, $this->_fileinfo, $regs)) {
                 $strComment = isset($regs['comment']) ? $regs['comment'] : '';

@@ -6,7 +6,7 @@ class Afx_Cache_Factory
     const CACHE_REDIS=3;
     const CACHE_APC=4;
     /**
-     * @return Afx_Cache_Adapter
+     * @return Afx_Cache_Redis_Adapter
      */
     public static function getCache($type=self::CACHE_REDIS)
     {
