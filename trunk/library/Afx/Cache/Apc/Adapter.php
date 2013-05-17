@@ -35,6 +35,13 @@ class Afx_Cache_Apc_Adapter implements Afx_Cache_Adapter
         
     }
     
+    
+    public function keys ($pattern)
+    {
+        return;
+    }
+    
+    
     public function add ($key, $value, $expire = 0)
     {
         return apc_add($key, $value, $expire);

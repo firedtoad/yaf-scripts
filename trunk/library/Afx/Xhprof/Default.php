@@ -412,7 +412,7 @@ function xhprof_aggregate_runs($xhprof_runs_impl, $runs,
     return array('description' => 'Invalid input..',
                  'raw'  => null);
   }
-
+  $description = null;
   $bad_runs = array();
   foreach($runs as $idx => $run_id) {
 

@@ -55,8 +55,8 @@ class Afx_Logger
         {
             $d_file = $file = isset($value['file']) ? $value['file'] : '';
             $line = isset($value['line']) ? $value['line'] : '';
-            $type = $value['type'];
-            $class = $value['class'];
+            $type = isset($value['type'])?$value['type']:'';
+            $class = isset($value['class'])?$value['class']:'Daemon';
             $function = $value['function'];
             $d_file = str_ireplace('\\', '/', $d_file);
             $logmsg[] = $time . "->" . $file . "->" . $class . $type . "" . $function . '--' . $line . "\n";

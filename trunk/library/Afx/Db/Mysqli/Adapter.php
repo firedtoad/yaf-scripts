@@ -1,6 +1,6 @@
 <?php
 /**
- * @version $Id: Adapter.php 146 2012-12-20 05:54:36Z zhangwenhao $
+ * @version $Id: Adapter.php 636 2013-05-14 09:45:10Z zhangwenhao $
  * @author zhangwenhao 
  *
  */
@@ -41,6 +41,8 @@ class Afx_Db_Mysqli_Adapter implements Afx_Db_Adapter
     private $__persist;
 
     private $__timeout;
+    
+    private $__wait_timeout=86400;
 
     private $__charset = 'utf8';
 
@@ -174,7 +176,7 @@ class Afx_Db_Mysqli_Adapter implements Afx_Db_Adapter
      */
     public function execute ($sql)
     {
-        if (! $this->__link) $this->__init();
+        if (! $this->__link ||!$this->__link->ping()) $this->__init();
         return $this->__execute($sql);
     }
 
@@ -191,6 +193,7 @@ class Afx_Db_Mysqli_Adapter implements Afx_Db_Adapter
         if ($this->__link->errno == 0)
         {
             $this->__link->set_charset($this->__charset);
+//            $this->__link->query('set wait_timeout='.$this->__wait_timeout);
         } else
         {
             ob_clean();
@@ -200,6 +203,7 @@ class Afx_Db_Mysqli_Adapter implements Afx_Db_Adapter
 
     private function __execute ($sql)
     {
+//        echo $sql,"\n";
         $this->__last_sql = $sql;
         //        $this->__sqls[] = $sql;
 //        $sql = $this->__link->real_escape_string($sql);
@@ -213,7 +217,8 @@ class Afx_Db_Mysqli_Adapter implements Afx_Db_Adapter
                 echo $sql;
                 echo $this->__link->error;
             }
-            Afx_Logger::log("sql=" . $sql . "\n" . $this->__link->error);
+            
+            Afx_Logger::log("sql=" . $sql . "\nthread_id=".$this->__link->thread_id ."\n". $this->__link->error);
         }
         $result = new Afx_Db_Mysqli_Result();
         $result->result = $this->__result;

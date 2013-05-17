@@ -88,6 +88,12 @@ class Afx_Cache_Memcache_Adapter implements Afx_Cache_Adapter
         return $this;
     }
 
+    public function keys ($pattern)
+    {
+        return ;
+    }
+    
+    
     /**
      * dercrement the key in cache
      * @param string $key

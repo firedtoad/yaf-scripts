@@ -137,6 +137,14 @@ class Afx_Cache_Redis_Adapter implements Afx_Cache_Adapter
         $val = $this->__redis->get($key);
         return $this->__redis->set($key, $val + $value);
     }
+    
+    /**
+     * @see Afx_Cache_Adapter::keys()
+     */
+    public function keys($pattern)
+    {
+        return $this->__redis->keys($pattern);
+    }
 
     /**
      */
@@ -1121,11 +1129,6 @@ class Afx_Cache_Redis_Adapter implements Afx_Cache_Adapter
     public function del ($key)
     {
         return $this->__redis->del($key);
-    }
-
-    public function keys ($pattern)
-    {
-        return $this->__redis->keys($pattern);
     }
 
     public function lrem ($key, $value, $count)

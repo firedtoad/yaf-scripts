@@ -1,6 +1,6 @@
 <?php
 /**
- * @version $Id: Queue.php 281 2013-03-19 07:45:22Z zhangwenhao $
+ * @version $Id: Queue.php 425 2013-05-03 08:21:23Z zhangwenhao $
  * The Queue Class Encapsulation with Redis in background  
  * @author zhangwenhao 
  */
@@ -73,6 +73,18 @@ class Afx_Queue
     public function remove($key,$value)
     {
         return $this->__cache->remove($key, $value, 1);
+    }
+    
+    /**
+     * 队列中是否存在$v
+     * @param string $k
+     * @param mixed $v
+     */
+    public function listExists($k,$v)
+    {
+        $size=$this->__cache->length($k);
+        $list=$this->__cache->lrange($k, 0, $size);
+        return in_array($v, $list);
     }
     
     /**

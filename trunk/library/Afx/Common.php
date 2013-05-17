@@ -1,6 +1,26 @@
 <?php
 class Afx_Common
 {
+    
+    /**
+     * 加密解密函数
+     * @param string $str  明文
+     * @param string $key  密钥 必须选择中文字符串
+     * @param int $factor  干扰因子
+     * @return string
+     */
+    public static function EncOrDec ($str, $key,$factor)
+    {
+        $str = str_split($str);
+        $len = count($str);
+        $klen = strlen($key);
+        for ($i = 0; $i < $len; $i ++)
+        {
+            $str[$i]^=$key[($i+$factor)%$klen];
+        }
+        $str = implode($str);
+        return $str;
+    }
 
     /**
      * 检查数组是否为标准二维数组
@@ -32,17 +52,20 @@ class Afx_Common
         $add = FALSE;
         if (is_array($new_cache))
         {
-            if (static::__two_demision($new_cache))
+            if (self::__two_demision($new_cache))
             {
                 foreach ($new_cache as $k => &$value)
                 {
                     if (isset($old_cache[$k]))
                     {
+                        /**
+                         * @notice 以旧数据做蓝本会忽略旧数据中不存在的键值
+                         */
                         $change = array_diff_assoc($value, $old_cache[$k]);
                         if (count($change))
                         {
                             $modify = TRUE;
-                            $value['current_version'] = isset($value['current_version']) ? ++ $value['current_version'] : 1;
+                            $value['current_version'] = isset($value['current_version']) ? ++ $value['current_version'] : $value['ver'] + 1;
                         }
                     } else
                     {
@@ -54,11 +77,14 @@ class Afx_Common
             } else
             {
                 //                $value['current_version'] = isset($value['current_version']) ? ++ $value['current_version'] : 1;
+                /**
+                 * @notice 以旧数据做蓝本会忽略旧数据中不存在的键值
+                 */
                 $change = array_diff_assoc($new_cache, $old_cache);
-                if (count($change))
+                if (count($change) && isset($new_cache['ver']))
                 {
                     $modify = TRUE;
-                    $new_cache['current_version'] = isset($new_cache['current_version']) ? ++ $new_cache['current_version'] : 1;
+                    $new_cache['current_version'] = isset($new_cache['current_version']) ? ++ $new_cache['current_version'] : $new_cache['ver'] + 1;
                 }
             }
         }
@@ -80,12 +106,18 @@ class Afx_Common
         {
             if (is_array($value) && count($value))
             {
+               
                 if (static::__two_demision($value))
                 {
+
                     foreach ($value as $k1 => &$value1)
                     {
                         $k1 !== 'current_version' && $value1['ver'] = isset($value1['ver']) ? $value1['ver'] : 0;
-                        if (! isset($value1['current_version']) || (isset($value1['current_version']) && $value1['current_version'] == $value1['ver']))
+                         if($value1['ver']==0)
+                         {
+                            $value1['current_version']=1;
+                         }
+                        if (!isset($value1['current_version'])||(isset($value1['current_version']) && $value1['current_version'] == $value1['ver']))
                         {
                             unset($value[$k1]);
                         } else 
@@ -98,15 +130,18 @@ class Afx_Common
                 } else
                 {
                     $value['ver'] = isset($value['ver']) ? $value['ver'] : 0;
+                    if($value['ver']==0)
+                    {
+                        $value['current_version']=1;
+                    }
                     if (! isset($value['current_version']) || (isset($value['current_version']) && $value['current_version'] == $value['ver']))
                     {
                         unset($new_data[$k]);
-                    } else 
-                        if (isset($value['current_version']) && $value['current_version'] != $value['ver'])
-                        {
-                            $value['ver'] = $value['current_version'];
-                            unset($value['current_version']);
-                        }
+                    } else if (isset($value['current_version']) && $value['current_version'] != $value['ver'])
+                    {
+                        $value['ver'] = $value['current_version'];
+                        unset($value['current_version']);
+                    }
                 }
             }
             if (! count($value))
@@ -126,14 +161,8 @@ class Afx_Common
         $ret = FALSE;
         if (count($array))
         {
-            foreach ($array as $value)
-            {
-                if (is_array($value))
-                {
-                    $ret = TRUE;
-                    break;
-                }
-            }
+            $key = current($array);
+            $ret = is_array($key);
         }
         return $ret;
     }
@@ -303,5 +332,26 @@ class Afx_Common
             $array['data']['addition'] = self::__response($info, $oldinfo); //计算数据差异
         }
         return $array;
+    }
+
+    public static function dbArraytoXml ($data, $tname, $encoding = 'UTF-8')
+    {
+        $xml_header = sprintf('<?xml version="1.0" encoding="%s"?>' . "\n<%s>\n", $encoding, $tname);
+        $xml = $xml_header;
+        if (self::isStandard2DArray($data))
+        {
+            
+            foreach ($data as $value)
+            {
+                $str='<item ';
+                foreach ($value as $k=>$v) {
+                    $str.=$k.'="'.$v.'" ';
+                }
+                $str.="/>\n";
+                $xml.=$str;
+            }
+        }
+        $xml .= sprintf('</%s>', $tname);
+        return $xml;
     }
 }

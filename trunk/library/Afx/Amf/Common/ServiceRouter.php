@@ -93,7 +93,7 @@ class Afx_Amf_Common_ServiceRouter {
         }
 
         if (!$serviceObject) {
-            throw new Afx_Exception("$serviceName service not found ");
+            throw new Afx_Amf_Exception("$serviceName service not found ");
         }
         return $serviceObject;
         
@@ -121,7 +121,7 @@ class Afx_Amf_Common_ServiceRouter {
      */
     public function executeServiceCall($serviceName, $methodName, array $parameters) {
         $unfilteredServiceObject = $this->getServiceObject($serviceName);
-        $serviceObject = Afx_Amf_FilterManager::getInstance()->callFilters(self::FILTER_SERVICE_OBJECT, $unfilteredServiceObject, $serviceName, $methodName, $parameters);
+        $serviceObject = Afx_Amfphp_Core_FilterManager::getInstance()->callFilters(self::FILTER_SERVICE_OBJECT, $unfilteredServiceObject, $serviceName, $methodName, $parameters);
 
         $isStaticMethod = false;
         
@@ -130,7 +130,7 @@ class Afx_Amf_Common_ServiceRouter {
         }else if (method_exists($serviceName, $methodName)) {
             $isStaticMethod = true;
         }else{
-            throw new Afx_Exception("method $methodName not found on $serviceName object ");
+            throw new Afx_Amf_Exception("method $methodName not found on $serviceName object ");
         }
         
         if(substr($methodName, 0, 1) == '_'){
@@ -143,7 +143,7 @@ class Afx_Amf_Common_ServiceRouter {
             $numberOfParameters = $method->getNumberOfParameters();
             $numberOfProvidedParameters = count($parameters);
             if ($numberOfProvidedParameters < $numberOfRequiredParameters || $numberOfProvidedParameters > $numberOfParameters) {
-                throw new Afx_Exception("Invalid number of parameters for method $methodName in service $serviceName : $numberOfRequiredParameters  required, $numberOfParameters total, $numberOfProvidedParameters provided");
+                throw new Afx_Amf_Exception("Invalid number of parameters for method $methodName in service $serviceName : $numberOfRequiredParameters  required, $numberOfParameters total, $numberOfProvidedParameters provided");
             }      
         }
         if($isStaticMethod){

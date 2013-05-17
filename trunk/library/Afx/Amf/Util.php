@@ -39,7 +39,7 @@ class Afx_Amf_Util {
      */
     static public function applyFunctionToContainedObjects($obj, $callBack, $recursionDepth = 0, $maxRecursionDepth = 30, $ignoreAmfTypes = true) {
         if ($recursionDepth == $maxRecursionDepth) {
-            throw new Afx_Exception("couldn't recurse deeper on object. Probably a looped reference");
+            throw new Afx_Amf_Exception("couldn't recurse deeper on object. Probably a looped reference");
         }
         //don't apply to Amfphp types such as byte array
         if ($ignoreAmfTypes && is_object($obj) && substr(get_class($obj), 0, 21) == 'Afx_Amf_Types') {
