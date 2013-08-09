@@ -21,7 +21,7 @@
  * @author Afx team && firedtoad@gmail.com &&dietoad@gmail.com
  */
 /**
- * @version $Id: Abstract.php 704 2013-05-16 07:39:51Z zhangwenhao $
+ * @version $Id: Abstract.php 1500 2013-07-15 08:19:09Z zhangwenhao $
  * @author zhangwenhao 
  *
  */
@@ -183,7 +183,9 @@ abstract class Afx_Module_Abstract
      */
     public function getAdapter ()
     {
-        if ($this->_adapter instanceof Afx_Db_Adapter)
+//        print_r($this->_adapter);
+//        echo $this->_adapter Instanceof Afx_Db_Adapter;
+        if ($this->_adapter Instanceof Afx_Db_Adapter)
         {
             return $this->_adapter;
         } else
@@ -1286,7 +1288,7 @@ abstract class Afx_Module_Abstract
 
     /**
      * 检查是否为标准数组
-     * 每一维的长度*维数==总长度 否则  不是标准数组
+     * 每一维的键值的crc32值也必须相等
      * @param array $a
      */
     protected function _is_standard_2darray ($a = array())
@@ -1295,14 +1297,25 @@ abstract class Afx_Module_Abstract
         if ($count > 0)
         {
             $first = current($a);
-            $count_all = count($a, COUNT_RECURSIVE);
-            $first_len = count($first);
-            return $count_all - ($count * $first_len + $count) == 0;
+            if(is_array($first))
+            {
+                 $crc=crc32(join('',array_keys($first)));
+                 foreach ($a as $value) 
+                 {
+                    $lcrc=crc32(join('',array_keys($value)));
+                    if($lcrc!=$crc)
+                    {
+                        return FALSE;
+                    }
+                 } 
+                 return TRUE;
+            }
         }
         return FALSE;
     }
    /**
     * 给二维数组分类
+    * 按键值的crc32分类
     * @param array $array
     * @return array classified array
     */
@@ -1311,7 +1324,7 @@ abstract class Afx_Module_Abstract
         $carray = array();
         foreach ($array as $k => $value)
         {
-            $len = count($value);
+            $len = crc32(join('',array_keys($value)));
             if (! isset($carray[$len]))
             {
                 $carray[$len] = array();
@@ -1321,10 +1334,10 @@ abstract class Afx_Module_Abstract
         return $carray;
     }
 
-    protected function _init ()
+    protected function _init ($create=FALSE)
     {
         $config = Yaf_Registry::get('config');
-        $adapter = Afx_Db_Factory::DbDriver($config['mysql']['driver'], TRUE);
+        $adapter = Afx_Db_Factory::DbDriver($config['mysql']['driver'], $create);
         $adapter->setConfig($config['mysql']);
         $this->setAdapter($adapter);
     }
@@ -1380,5 +1393,9 @@ abstract class Afx_Module_Abstract
     {
         if ($key) $this->_groupBy = $key;
         return $this;
+    }
+    
+    public function __destruct()
+    {
     }
 }

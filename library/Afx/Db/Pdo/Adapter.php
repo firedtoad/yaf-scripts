@@ -1,6 +1,6 @@
 <?php
 /**
- * @version $Id: Adapter.php 94 2012-12-10 03:39:40Z zhujinghe $
+ * @version $Id: Adapter.php 1485 2013-07-15 03:58:18Z zhangwenhao $
  * @author zhangwenhao 
  *
  */
@@ -92,6 +92,16 @@ class Afx_Db_Pdo_Adapter implements Afx_Db_Adapter
         return self::$__instance;
     }
 
+    public function close()
+    {
+        return 'pdo_not_implement';
+    }
+    
+    public function ping()
+    {
+        return 'pdo_not_support_for_ping';
+    }
+    
     /**
      * @param string $dbname
      */
@@ -216,6 +226,10 @@ class Afx_Db_Pdo_Adapter implements Afx_Db_Adapter
                 print_r($this->__link->errorInfo());
             }
             Afx_Logger::log(join('', $this->__link->errorInfo()));
+            if ($this->__link->getAttribute(PDO::ATTR_SERVER_INFO) == 'MySQL server has gone away') {
+                //当发生2006错误时，重新连接MYSQL
+                $this->__link = false;
+            }
         }
         $result = new Afx_Db_Pdo_Result();
         $result->result = $this->__result;

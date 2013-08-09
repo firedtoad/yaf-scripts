@@ -1,6 +1,6 @@
 <?php
 /**
- * @version $Id: Adapter.php 636 2013-05-14 09:45:10Z zhangwenhao $
+ * @version $Id: Adapter.php 1506 2013-07-15 10:59:26Z zhangwenhao $
  * @author zhangwenhao 
  *
  */
@@ -41,8 +41,8 @@ class Afx_Db_Mysqli_Adapter implements Afx_Db_Adapter
     private $__persist;
 
     private $__timeout;
-    
-    private $__wait_timeout=86400;
+
+    private $__wait_timeout = 86400;
 
     private $__charset = 'utf8';
 
@@ -176,8 +176,32 @@ class Afx_Db_Mysqli_Adapter implements Afx_Db_Adapter
      */
     public function execute ($sql)
     {
-        if (! $this->__link ||!$this->__link->ping()) $this->__init();
+        if (! $this->__link) $this->__init();
         return $this->__execute($sql);
+    }
+
+    /**
+     * ping mysql tell it keep-alive
+     * @see Afx_Db_Adapter::ping()
+     */
+    public function ping ()
+    {
+        if (! $this->__link || ! $this->__link->ping())
+        {
+            $this->__init();
+        }
+    }
+
+    /**
+     * close the link
+     * @see Afx_Db_Adapter::close()
+     */
+    public function close ()
+    {
+        if ($this->__link)
+        {
+            $this->__link->close();
+        }
     }
 
     private function __init ()
@@ -189,11 +213,12 @@ class Afx_Db_Mysqli_Adapter implements Afx_Db_Adapter
         $this->__link = mysqli_init();
         $this->__link->set_opt(MYSQLI_OPT_CONNECT_TIMEOUT, $this->__timeout);
         //            $this->__link = new Mysqli($this->__host, $this->__user, $this->__pass, $this->__dbname, $this->__port, $this->__socket);
+        
         $this->__link->real_connect($this->__host, $this->__user, $this->__pass, $this->__dbname, $this->__port, $this->__socket);
         if ($this->__link->errno == 0)
         {
             $this->__link->set_charset($this->__charset);
-//            $this->__link->query('set wait_timeout='.$this->__wait_timeout);
+             //            $this->__link->query('set wait_timeout='.$this->__wait_timeout);
         } else
         {
             ob_clean();
@@ -203,11 +228,12 @@ class Afx_Db_Mysqli_Adapter implements Afx_Db_Adapter
 
     private function __execute ($sql)
     {
-//        echo $sql,"\n";
+        //        echo $sql,"\n";
         $this->__last_sql = $sql;
         //        $this->__sqls[] = $sql;
-//        $sql = $this->__link->real_escape_string($sql);
+        //        $sql = $this->__link->real_escape_string($sql);
         $this->__result = $this->__link->query($sql);
+        //         Afx_Logger::log("sql=" . $sql);
         if ($this->__link->errno)
         {
             //            echo $this->__link->error;
@@ -217,13 +243,27 @@ class Afx_Db_Mysqli_Adapter implements Afx_Db_Adapter
                 echo $sql;
                 echo $this->__link->error;
             }
-            
-            Afx_Logger::log("sql=" . $sql . "\nthread_id=".$this->__link->thread_id ."\n". $this->__link->error);
+            Afx_Logger::log("sql=" . $sql . "\nthread_id=" . $this->__link->thread_id . "\n" . $this->__link->error);
+            echo $this->__link->errno;
+            if ($this->__link->errno == 2006)
+            {
+                //当发生2006错误时，重新连接MYSQL
+                $this->__link = false;
+            }
         }
+        //        Afx_Logger::log("sql=" . $sql,1,TRUE);
         $result = new Afx_Db_Mysqli_Result();
         $result->result = $this->__result;
         $result->link = $this->__link;
         return $result;
          //       print_r($this->__result);
+    }
+
+    public function __destruct ()
+    {
+        if ($this->__link)
+        {
+            $this->close();
+        }
     }
 }

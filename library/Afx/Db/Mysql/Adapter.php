@@ -1,6 +1,6 @@
 <?php
 /**
- * @version $Id: Adapter.php 94 2012-12-10 03:39:40Z zhujinghe $
+ * @version $Id: Adapter.php 1485 2013-07-15 03:58:18Z zhangwenhao $
  * @author zhangwenhao 
  *
  */
@@ -97,20 +97,27 @@ class Afx_Db_Mysql_Adapter implements Afx_Db_Adapter
      */
     public function selectDatabase ($dbname)
     {
-        $oldname=$this->__dbname;
-        $this->__dbname=$dbname;
-        $this->__config['dbname']=$dbname;
+        $oldname = $this->__dbname;
+        $this->__dbname = $dbname;
+        $this->__config['dbname'] = $dbname;
         if (! is_object($this->__link))
         {
             $this->__init();
-        }else{
-            if($oldname!=$dbname)
+        } else
+        {
+            if ($oldname != $dbname)
             {
-                 mysql_select_db($dbname,$this->__link);
+                mysql_select_db($dbname, $this->__link);
             }
         }
     }
 
+    
+    public function close()
+    {
+        mysql_close($this->__link);
+    }
+    
     public function setConfig ($config)
     {
         $this->__host = $config['host'];
@@ -127,12 +134,12 @@ class Afx_Db_Mysql_Adapter implements Afx_Db_Adapter
         //        }
         $this->__config = $config;
     }
-    
-    public function getConfig()
+
+    public function getConfig ()
     {
         return $this->__config;
     }
-    
+
     public function getLastSql ()
     {
         return $this->__last_sql;
@@ -140,9 +147,9 @@ class Afx_Db_Mysql_Adapter implements Afx_Db_Adapter
 
     public function quote ($v, $type)
     {
-         if (! $this->__link) $this->__init();
-        return gettype($v)=='string'?"'".mysql_real_escape_string($v,$this->__link)."'":$v;
-//        return mysql_real_escape_string($v, $this->__link);
+        if (! $this->__link) $this->__init();
+        return gettype($v) == 'string' ? "'" . mysql_real_escape_string($v, $this->__link) . "'" : $v;
+         //        return mysql_real_escape_string($v, $this->__link);
     }
 
     public function commit ()
@@ -172,25 +179,39 @@ class Afx_Db_Mysql_Adapter implements Afx_Db_Adapter
         return $this->__execute($sql);
     }
 
+    /**
+     * ping mysql tell it keep-alive
+     * @see Afx_Db_Adapter::ping()
+     */
+    public function ping ()
+    {
+        if (! $this->__link->ping())
+        {
+            $this->__init();
+        }
+    }
+
     private function __init ()
     {
         if (! count($this->__config))
         {
             throw new Exception('please call setConfig first');
         }
-        if($this->__persist)
+        if ($this->__persist)
         {
-            $this->__link=mysql_pconnect($this->__host.':'.$this->__port,$this->__user,$this->__pass);
-        }else{
-            $this->__link=mysql_connect($this->__host.':'.$this->__port,$this->__user,$this->__pass);
+            $this->__link = mysql_pconnect($this->__host . ':' . $this->__port, $this->__user, $this->__pass);
+        } else
+        {
+            $this->__link = mysql_connect($this->__host . ':' . $this->__port, $this->__user, $this->__pass);
         }
-        if(is_resource($this->__link))
+        if (is_resource($this->__link))
         {
-            mysql_set_charset($this->__charset,$this->__link);
-            mysql_select_db($this->__dbname,$this->__link);
-        }else{
+            mysql_set_charset($this->__charset, $this->__link);
+            mysql_select_db($this->__dbname, $this->__link);
+        } else
+        {
             ob_clean();
-            throw  new Afx_Db_Exception(mysql_error(), mysql_errno());
+            throw new Afx_Db_Exception(mysql_error(), mysql_errno());
         }
     }
 
@@ -199,8 +220,8 @@ class Afx_Db_Mysql_Adapter implements Afx_Db_Adapter
         $this->__last_sql = $sql;
         $this->__sqls[] = $sql;
         //        $sql = $this->__link->real_escape_string($sql);
-        $this->__result = mysql_query($sql,$this->__link);
-        if (mysql_errno($this->__link)!='')
+        $this->__result = mysql_query($sql, $this->__link);
+        if (mysql_errno($this->__link) != '')
         {
             if (self::$debug)
             {
@@ -208,10 +229,14 @@ class Afx_Db_Mysql_Adapter implements Afx_Db_Adapter
                 print_r(mysql_error($this->__link));
             }
             Afx_Logger::log(mysql_error($this->__link));
+            if (mysql_errno($this->__link) == 2006) {
+                //当发生2006错误时，重新连接MYSQL
+                $this->__link = false;
+            }
         }
         $result = new Afx_Db_Mysql_Result();
         $result->result = $this->__result;
-        $result->link=$this->__link;
+        $result->link = $this->__link;
         return $result;
          //       print_r($this->__result);
     }

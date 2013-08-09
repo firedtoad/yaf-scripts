@@ -1,6 +1,6 @@
 <?php
 /*
- * @version $Id: ChatClient.php 276 2013-03-08 02:42:10Z zhangwenhao $
+ * @version $Id: ChatClient.php 1616 2013-07-22 11:43:26Z zhangwenhao $
  */
 /**
  * 聊天客户端
@@ -46,14 +46,24 @@ class Afx_ChatClient
      */
     private static $instance;
 //    const HOST = '192.168.17.81';
+    public static $HOST = '127.0.0.1';
+    public static $PORT = 8888;
+    public static $TIMEOUT = 1;
+    public static $USER = '0';
+    public static $LEAGUE_ID = 65535;
+    public static $SCENE_ID = 65535;
+    public static $SYSTEMKEY = 'sss';
+    public static $IFACTOR=33;
+    public static $ADMINKEY = '管理员密钥';
     const HOST = '127.0.0.1';
     const PORT = 8888;
     const TIMEOUT = 1;
     const USER = '0';
     const LEAGUE_ID = 65535;
     const SCENE_ID = 65535;
-    const SYSTEMKEY = '中文密钥阿卡家开始大数据库的';
+    const SYSTEMKEY = 'sss';
     const IFACTOR=33;
+    const ADMINKEY = '管理员密钥';
     public static $msgs = array();
 
     static $auto_login = true;
@@ -71,7 +81,18 @@ class Afx_ChatClient
     private static $sock = 0;
 
     static $arr = array();
-
+    public static function setConfig($config)
+    {
+        self::$HOST=isset($config['host'])?$config['host']:self::HOST;
+        self::$PORT=isset($config['port'])?$config['port']:self::PORT;
+        self::$TIMEOUT=isset($config['timeout'])?$config['timeout']:self::TIMEOUT;
+        self::$USER=isset($config['user'])?$config['user']:self::USER;
+        self::$SCENE_ID=isset($config['scene_id'])?$config['scene_id']:self::SCENE_ID;
+        self::$LEAGUE_ID=isset($config['league_id'])?$config['league_id']:self::LEAGUE_ID;
+        self::$SYSTEMKEY=isset($config['systemkey'])?$config['systemkey']:self::SYSTEMKEY;
+        self::$ADMINKEY=isset($config['adminkey'])?$config['adminkey']:self::ADMINKEY;
+    }
+    
     function EncOrDec ($str, $key)
     {
         $str = str_split($str);
@@ -85,8 +106,16 @@ class Afx_ChatClient
         return $str;
     }
 
-    private function __construct ($host = self::HOST, $port = self::PORT, $timeout = self::TIMEOUT)
+    private function __construct ()
     {
+        $host = self::$HOST;
+        $port = self::$PORT;
+        $timeout = self::$TIMEOUT;
+        $user = self::$USER;
+        $scene_id = self::$SCENE_ID;
+        $league_id = self::$LEAGUE_ID;
+        $key = self::$SYSTEMKEY;
+        $adminkey = self::$ADMINKEY;
         $sock = fsockopen($host, $port, $errno, $errstr, $timeout);
         if ($sock == false)
         {
@@ -95,13 +124,18 @@ class Afx_ChatClient
         // 非阻塞
         stream_set_blocking($sock, 0);
         //超时时间
-        stream_set_timeout($sock, 1);
+        stream_set_timeout($sock, 100);
         self::$sock = $sock;
         $this->__policy_request();
         if (self::$auto_login)
         {
             $this->login(array(
-                'u'=>self::USER,'uid'=>self::USER,'scene_id'=>self::SCENE_ID,'league_id'=>self::LEAGUE_ID,'key'=>md5(self::SYSTEMKEY . self::USER)
+                'adminkey'=>$adminkey,
+                'u'=>$user,
+                'rid'=>0,
+                'scene_id'=>$scene_id,
+                'league_id'=>$league_id,
+                'key'=>md5($key . $user)
             ));
         }
     }
@@ -110,13 +144,13 @@ class Afx_ChatClient
      * @param string $host
      * @param int $port
      * @param int $timeout
-     * @return ChatClient
+     * @return Afx_ChatClient
      */
-    public static function Instance ($host = self::HOST, $port = self::PORT, $timeout = self::TIMEOUT)
+    public static function Instance ()
     {
         if (! self::$instance instanceof Afx_ChatClient)
         {
-            self::$instance = new self($host, $port, $timeout);
+            self::$instance = new self();
         }
         return self::$instance;
     }
@@ -136,10 +170,21 @@ class Afx_ChatClient
         }
         return $login;
     }
-
+    
+    /**
+     * 小喇叭
+     * data:array('u'=>'dieotad','m'=>'msg');
+     * @param array $data
+     * @return boolean
+     */
+    public function speeker($data)
+    {
+        return $this->__chat_common('speeker', $data, 'm', 'speek_ok');
+    }
+    
     /**
      * 系统消息
-     * data:array('type'=>'user|all|team|list','u'=>'dietoad',teamid=>12,'list'=>array('user1','user2'),'m'=>'hi map')
+     * data:array('type'=>'user|all|team|list','t'=>'t','u'=>'dietoad',teamid=>12,'list'=>array('user1','user2'),'m'=>'hi map')
      * 必须参数
      * user:u
      * team:teamid
@@ -150,6 +195,12 @@ class Afx_ChatClient
     public function system ($data = array())
     {
         return $this->__chat_common('system', $data, 'm', 'system_ok');
+    }
+    
+    //任務類型
+    public function mission ($data = array())
+    {
+        return $this->__chat_common('mission', $data, 'm', 'mission_ok');
     }
 
     /**
@@ -422,7 +473,8 @@ class Afx_ChatClient
                 continue;
             }
             
-            $data=$this->EncOrDec($data, self::SYSTEMKEY);
+//            $data=$this->EncOrDec($data, self::SYSTEMKEY);
+            $data=substr($data, 4);
             $ret = json_decode($data, TRUE);
             self::$msgs[$ret['c']] = $data;
             if (isset($ret[$key]) && $ret[$key] == $value)
@@ -447,7 +499,7 @@ class Afx_ChatClient
         if (isset($arr['c']))
         {
             $data = MCommon::EncodeWithCN($arr);
-            $data=$this->EncOrDec($data, self::SYSTEMKEY);
+//            $data=$this->EncOrDec($data, self::SYSTEMKEY);
             fwrite(self::$sock, $data);
             fflush(self::$sock);
             usleep(100);
