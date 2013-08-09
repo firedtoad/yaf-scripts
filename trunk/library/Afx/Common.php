@@ -2,6 +2,10 @@
 class Afx_Common
 {
     
+    public static $create=0;
+    
+    public static $close=0;
+    
     /**
      * 加密解密函数
      * @param string $str  明文
@@ -50,7 +54,7 @@ class Afx_Common
     {
         $modify = FALSE;
         $add = FALSE;
-        if (is_array($new_cache))
+        if (is_array($new_cache)&&is_array($old_cache))
         {
             if (self::__two_demision($new_cache))
             {
@@ -62,6 +66,7 @@ class Afx_Common
                          * @notice 以旧数据做蓝本会忽略旧数据中不存在的键值
                          */
                         $change = array_diff_assoc($value, $old_cache[$k]);
+
                         if (count($change))
                         {
                             $modify = TRUE;
@@ -112,6 +117,10 @@ class Afx_Common
 
                     foreach ($value as $k1 => &$value1)
                     {
+                        if(isset($value1['role_id'])&&$value1['role_id']==0)
+                        {
+                            Afx_Logger::log(print_r($value,1),1,TRUE);
+                        }
                         $k1 !== 'current_version' && $value1['ver'] = isset($value1['ver']) ? $value1['ver'] : 0;
                          if($value1['ver']==0)
                          {

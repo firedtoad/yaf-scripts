@@ -1,6 +1,6 @@
 <?php
 /*
- * $Id$
+ * $Id: Random.php 1235 2013-06-28 08:54:18Z cfc4n $
  * @author
  */
 class Afx_RandomUtil {

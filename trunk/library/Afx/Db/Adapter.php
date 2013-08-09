@@ -1,6 +1,6 @@
 <?php
 /**
- * @version $Id: Adapter.php 94 2012-12-10 03:39:40Z zhujinghe $
+ * @version $Id: Adapter.php 1485 2013-07-15 03:58:18Z zhangwenhao $
  * @author zhangwenhao 
  *
  */
@@ -27,9 +27,13 @@ interface Afx_Db_Adapter
 
     public function quote ($v, $type);
     
+    public function ping();
+    
     /**
      * @param string $sql
      * @return Afx_Db_Result
      */
     public function execute ($sql);
+    
+    public function close();
 }

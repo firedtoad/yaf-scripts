@@ -1,5 +1,9 @@
 <?php
-
+/**
+ * @version $Id: CReflection.php 1235 2013-06-28 08:54:18Z cfc4n $
+ * @author CFC4N 
+ *
+ */
 class Afx_Amf_plugins_CReflection {
     var $_fileinfo;
     
@@ -70,14 +74,15 @@ class CReflectionMethod {
     function getParameters()
     {
         $arr = array();
-        $arrT = explode(',', $this->_paramenter);
         if (trim($this->_paramenter) == '')
         {
             return $arr;
         }
+        $arrT = explode(',', $this->_paramenter);
         foreach ($arrT as $value)
         {
-            $arr[] = trim($value);
+            $aTmp = explode('=', $value);
+            $arr[] = substr(trim($aTmp[0]),1);
         }
         return $arr;
     }
